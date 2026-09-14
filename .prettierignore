@@ -1,0 +1,6 @@
+package-lock.json
+db/migrations/
+build/
+build-test/
+.react-router/
+node_modules/

@@ -1,0 +1,35 @@
+:root {
+  --ink: #272131;
+  --muted: #625b6b;
+  --purple: #57328d;
+  --purple-dark: #3c206b;
+  --yellow: #f2e735;
+  --paper: #fffefa;
+  --outer: #e7e2ec;
+  --line: #c9c2cf;
+  --focus: #3266c2;
+}
+.color-purple {
+  --tag-bg: #e8dcf7;
+  --tag-ink: #4b2b77;
+}
+.color-pink {
+  --tag-bg: #f3d9df;
+  --tag-ink: #742e48;
+}
+.color-blue {
+  --tag-bg: #dce8f5;
+  --tag-ink: #254b73;
+}
+.color-green {
+  --tag-bg: #e3eccf;
+  --tag-ink: #435827;
+}
+.color-orange {
+  --tag-bg: #f6e1c8;
+  --tag-ink: #7a4721;
+}
+.color-neutral {
+  --tag-bg: #ece8ed;
+  --tag-ink: #6a6074;
+}

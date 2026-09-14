@@ -1,0 +1,15 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+build/
+build-test/
+.react-router/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+test-results/
+playwright-report/

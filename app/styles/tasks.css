@@ -1,0 +1,636 @@
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 17px;
+  align-items: start;
+}
+.board-column {
+  background: #f1edf4;
+  border: 1px solid #b6adbf;
+  min-height: 435px;
+  padding: 0 10px 9px;
+  transition: background 0.12s;
+}
+.column-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 -10px 13px;
+  padding: 11px 12px;
+  border-bottom: 1px solid #b6adbf;
+  border-top: 3px solid #aaa0b3;
+  background: #e9e3ef;
+}
+.column-heading h2 {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.column-count {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  font:
+    0.75rem "Courier New",
+    monospace;
+  border: 1px solid #b0a5bc;
+  background: #ffffff80;
+}
+.column-heading > svg {
+  margin-left: auto;
+}
+.column-in_progress .column-heading {
+  border-top-color: var(--purple);
+  background: #e3d8f1;
+}
+.column-review .column-heading {
+  border-top-color: #b39721;
+  background: #f0e9c6;
+}
+.column-done .column-heading {
+  border-top-color: #6b8150;
+  background: #e2e9d5;
+}
+.column-over {
+  background: #dfd0f0;
+}
+.column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 30px;
+}
+.task-card {
+  position: relative;
+  background: #fffefa;
+  padding: 12px 12px 8px;
+  border: 1px solid #a89aaf;
+  box-shadow: 2px 2px 0 #d4cadc;
+}
+.task-card:hover {
+  border-color: #6f5489;
+}
+.task-card.is-dragging {
+  opacity: 0.4;
+}
+.task-card.is-drop-target::before {
+  content: "";
+  height: 4px;
+  background: var(--purple);
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: -8px;
+}
+.card-top,
+.card-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+.task-number {
+  color: #7b6e85;
+  font:
+    0.75rem "Courier New",
+    monospace;
+  letter-spacing: 0.03em;
+}
+.priority-high {
+  font:
+    bold 0.75rem Arial,
+    sans-serif;
+  border: 1px solid #b36b48;
+  background: #f6e4cd;
+  color: #974b27;
+  height: 15px;
+  min-width: 14px;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+}
+.drag-handle {
+  display: inline-flex;
+  cursor: grab;
+  padding: 2px;
+  color: #94869e;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+.task-title {
+  display: block;
+  font-size: 0.9375rem;
+  line-height: 1.42;
+  margin: 7px 0 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.task-title:hover {
+  text-decoration: underline;
+}
+.task-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 19px;
+}
+.label {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  padding: 0 6px;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  border: 1px solid color-mix(in srgb, var(--tag-ink) 32%, transparent);
+  white-space: nowrap;
+}
+.card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  border-top: 1px dotted #d1c8d8;
+  margin-top: 14px;
+  padding-top: 10px;
+}
+.task-owner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  min-width: 0;
+}
+.help-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 0;
+  color: #746581;
+  padding: 4px 0 4px 4px;
+  font-size: 0.75rem;
+}
+.help-button:hover {
+  color: var(--purple);
+  text-decoration: underline;
+}
+.help-button.is-helping {
+  color: #516932;
+}
+.move-menu {
+  margin-top: 5px;
+  text-align: right;
+  font-size: 0.8125rem;
+  color: #7b6e85;
+}
+.move-menu summary {
+  display: inline-block;
+  padding: 4px;
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.move-menu summary::-webkit-details-marker {
+  display: none;
+}
+.move-options {
+  position: absolute;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  border: 1px solid var(--ink);
+  background: #fffefa;
+  box-shadow: 3px 3px #b6a9c4;
+}
+.move-options button {
+  background: none;
+  border: 0;
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+.move-options button:hover,
+.move-options button:focus-visible {
+  background: #e6dcef;
+}
+.task-complete .task-title {
+  color: #5e5765;
+}
+.add-task-link {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  padding: 7px;
+  font-size: 0.75rem;
+  color: #756880;
+  text-decoration: none;
+}
+.add-task-link:hover {
+  color: var(--purple);
+  background: #e5dcea;
+}
+.column-empty {
+  text-align: center;
+  color: var(--muted);
+  font:
+    italic 1rem/1.4 Georgia,
+    serif;
+  padding: 40px 12px;
+}
+.board-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 19px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.board-note strong {
+  font-weight: 400;
+  color: var(--ink);
+}
+.task-list {
+  border: 1px solid #b8aebe;
+}
+.list-heading,
+.task-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 210px 140px 125px;
+  gap: 20px;
+  align-items: center;
+  padding: 17px 18px;
+}
+.list-heading {
+  font:
+    bold 0.7rem "Courier New",
+    monospace;
+  color: var(--muted);
+  background: #eee8f3;
+  border-bottom: 1px solid #b8aebe;
+}
+.task-row + .task-row {
+  border-top: 1px solid var(--line);
+}
+.task-row > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+.task-row a {
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+.task-row a:hover {
+  text-decoration: underline;
+}
+.row-status {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.part-label {
+  font-size: 0.8rem;
+  color: var(--purple);
+}
+.empty-state {
+  padding: 65px 24px;
+  text-align: center;
+  border: 1px dashed #b4a4c1;
+}
+.empty-state h2 {
+  font:
+    bold italic 1.8rem Georgia,
+    serif;
+  margin-bottom: 12px;
+}
+.empty-state p {
+  color: var(--muted);
+  margin-bottom: 22px;
+}
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: #21142e80;
+  z-index: 20;
+}
+.task-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  z-index: 21;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 6px 6px 0 #21172e;
+}
+.dialog-titlebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 7px 9px 7px 18px;
+  background: var(--purple);
+  color: #fff;
+  border-bottom: 1px solid var(--ink);
+}
+.dialog-titlebar h2 {
+  font:
+    bold 0.8rem "Courier New",
+    monospace;
+}
+.dialog-titlebar .icon-button {
+  color: var(--ink);
+}
+.dialog-intro {
+  padding: 26px 28px 0;
+}
+.dialog-intro h2 {
+  font:
+    bold italic 1.85rem Georgia,
+    serif;
+}
+.dialog-intro p {
+  font-size: 0.875rem;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.task-form {
+  padding: 24px 28px 28px;
+}
+.form-field {
+  display: grid;
+  gap: 7px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 400;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+.label-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.label-choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  background: var(--tag-bg);
+  color: var(--tag-ink);
+  border: 1px solid color-mix(in srgb, var(--tag-ink) 35%, transparent);
+}
+.label-choice input {
+  accent-color: var(--purple);
+  min-height: 0;
+  width: 14px;
+  margin: 0;
+  box-shadow: none;
+}
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-top: 24px;
+}
+.form-notice {
+  padding: 10px 13px;
+  margin-bottom: 18px;
+  border: 1px solid #b5844a;
+  background: #fff0cf;
+  font-size: 0.875rem;
+}
+.task-detail {
+  padding: 26px 28px 28px;
+}
+.detail-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 15px;
+}
+.priority-text {
+  font-size: 0.7rem;
+  margin-left: auto;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+.task-detail > h2 {
+  font:
+    bold 1.95rem/1.15 Georgia,
+    serif;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+.task-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-top: 18px;
+  font-size: 0.9375rem;
+  color: #5c5365;
+  line-height: 1.7;
+}
+.detail-properties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 26px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 20px 0;
+}
+.property-label {
+  display: block;
+  font:
+    0.7rem "Courier New",
+    monospace;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.detail-properties .task-owner {
+  font-size: 0.9rem;
+  gap: 10px;
+}
+.detail-properties select {
+  font-size: 0.9rem;
+}
+.helpers-section {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 19px;
+  background: #f0eadf;
+  border: 1px solid #c1b8a7;
+}
+.helpers-section h3 {
+  font:
+    bold italic 1.25rem Georgia,
+    serif;
+}
+.helpers-section p {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.detail-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 24px;
+}
+.archive-confirm {
+  padding-top: 20px;
+  font-size: 0.875rem;
+}
+.archive-confirm p {
+  margin-bottom: 10px;
+}
+.archive-confirm .text-button {
+  margin-left: 16px;
+}
+@media (max-width: 1100px) {
+  .board-grid {
+    gap: 11px;
+  }
+  .board-column {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+  .column-heading {
+    margin-left: -7px;
+    margin-right: -7px;
+    padding: 9px;
+    gap: 6px;
+  }
+  .task-card {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .list-heading,
+  .task-row {
+    grid-template-columns: minmax(180px, 1fr) 140px 110px 105px;
+    gap: 12px;
+  }
+}
+@media (max-width: 920px) {
+  .board-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .board-column {
+    min-height: 300px;
+  }
+  .list-heading {
+    display: none;
+  }
+  .task-row {
+    grid-template-columns: 1fr 140px;
+  }
+  .task-row > .task-labels {
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 560px) {
+  .board-grid {
+    grid-template-columns: 1fr;
+  }
+  .board-column {
+    min-height: 0;
+    padding: 0 12px 8px;
+  }
+  .column-heading {
+    margin-left: -12px;
+    margin-right: -12px;
+    padding: 12px;
+  }
+  .column-heading h2 {
+    font-size: 1rem;
+  }
+  .task-card {
+    padding: 13px 14px 8px;
+  }
+  .task-title {
+    font-size: 1rem;
+  }
+  .card-bottom {
+    padding-top: 9px;
+    margin-top: 13px;
+  }
+  .task-owner,
+  .help-button {
+    font-size: 0.8rem;
+  }
+  .task-number {
+    font-size: 0.75rem;
+  }
+  .label {
+    font-size: 0.75rem;
+  }
+  .move-menu {
+    font-size: 0.8rem;
+  }
+  .move-menu summary {
+    min-height: 28px;
+    padding: 5px;
+  }
+  .board-note {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .task-row {
+    padding: 16px 12px;
+    grid-template-columns: 1fr 115px;
+    gap: 12px 8px;
+  }
+  .task-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  .task-detail,
+  .task-form {
+    padding: 22px 19px;
+  }
+  .dialog-intro {
+    padding: 24px 19px 0;
+  }
+  .helpers-section {
+    padding: 13px;
+    gap: 12px;
+  }
+  .helpers-section .button {
+    padding: 8px 9px;
+  }
+  .task-detail > h2 {
+    font-size: 1.7rem;
+  }
+  .detail-properties {
+    gap: 14px;
+  }
+}

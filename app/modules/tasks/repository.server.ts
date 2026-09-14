@@ -1,0 +1,74 @@
+import { and, desc, eq, isNull } from "drizzle-orm";
+import { db } from "../../platform/db/client.server";
+import * as tables from "../../platform/db/schema.server";
+import { DEMO_MEMBER, DEMO_WORKSPACE } from "../../platform/demo.server";
+import type { WorkspaceSnapshot } from "./model";
+
+export async function readWorkspace(
+  workspaceId = DEMO_WORKSPACE,
+  currentMemberId = DEMO_MEMBER,
+): Promise<WorkspaceSnapshot> {
+  return db.transaction(
+    async (tx) => {
+      const workspace = await tx
+        .select()
+        .from(tables.workspaces)
+        .where(eq(tables.workspaces.id, workspaceId));
+      const taskRows = await tx
+        .select()
+        .from(tables.tasks)
+        .where(
+          and(
+            eq(tables.tasks.workspaceId, workspaceId),
+            isNull(tables.tasks.archivedAt),
+          ),
+        );
+      const members = await tx
+        .select()
+        .from(tables.members)
+        .where(eq(tables.members.workspaceId, workspaceId));
+      const labels = await tx
+        .select()
+        .from(tables.labels)
+        .where(eq(tables.labels.workspaceId, workspaceId));
+      const links = await tx
+        .select()
+        .from(tables.taskLabels)
+        .where(eq(tables.taskLabels.workspaceId, workspaceId));
+      const helpers = await tx
+        .select()
+        .from(tables.taskHelpers)
+        .where(eq(tables.taskHelpers.workspaceId, workspaceId));
+      const activity = await tx
+        .select()
+        .from(tables.activity)
+        .where(eq(tables.activity.workspaceId, workspaceId))
+        .orderBy(desc(tables.activity.createdAt))
+        .limit(100);
+      if (!workspace[0] || !members.some((m) => m.id === currentMemberId))
+        throw new Response("Workspace not found.", { status: 404 });
+      return {
+        name: workspace[0].name,
+        currentMemberId,
+        members,
+        labels,
+        tasks: taskRows.map((task) => ({
+          ...task,
+          createdAt: task.createdAt.toISOString(),
+          updatedAt: task.updatedAt.toISOString(),
+          labelIds: links
+            .filter((l) => l.taskId === task.id)
+            .map((l) => l.labelId),
+          helperIds: helpers
+            .filter((h) => h.taskId === task.id)
+            .map((h) => h.memberId),
+        })),
+        activity: activity.map((event) => ({
+          ...event,
+          createdAt: event.createdAt.toISOString(),
+        })),
+      };
+    },
+    { isolationLevel: "repeatable read", accessMode: "read only" },
+  );
+}
