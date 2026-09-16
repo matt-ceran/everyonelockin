@@ -14,11 +14,12 @@ import {
 
 function Frame({ title, children }: { title: string; children: ReactNode }) {
   const navigate = useNavigate();
+  const { base } = useWorkspace();
   return (
     <Dialog.Root
       open
       onOpenChange={(open) => {
-        if (!open) void navigate("/");
+        if (!open) void navigate(base);
       }}
     >
       <Dialog.Portal>
@@ -44,7 +45,7 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function Notice({ editingTaskId }: { editingTaskId?: string }) {
-  const { result, refresh, busy } = useWorkspace();
+  const { base, result, refresh, busy } = useWorkspace();
   return result && !result.ok ? (
     <div className="form-notice" role="alert">
       <p>{result.message}</p>
@@ -55,7 +56,7 @@ function Notice({ editingTaskId }: { editingTaskId?: string }) {
               Your draft is still here. Reviewing the latest task will leave
               this draft.
             </p>
-            <Link className="text-button" to={`/tasks/${editingTaskId}`}>
+            <Link className="text-button" to={`${base}/tasks/${editingTaskId}`}>
               Review latest task
             </Link>
           </>
@@ -80,7 +81,7 @@ function TaskEditor({
   task?: Task;
   status?: TaskStatus;
 }) {
-  const { workspace, send, busy } = useWorkspace();
+  const { workspace, base, send, busy } = useWorkspace();
   const [version] = useState(task?.version);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -176,7 +177,10 @@ function TaskEditor({
           </div>
         </div>
         <div className="form-actions">
-          <Link className="text-button" to={task ? `/tasks/${task.id}` : "/"}>
+          <Link
+            className="text-button"
+            to={task ? `${base}/tasks/${task.id}` : base}
+          >
             Cancel
           </Link>
           <button className="button button-primary" type="submit">
@@ -204,7 +208,7 @@ export function NewTaskDialog() {
 }
 
 export function TaskDialog({ task }: { task: Task }) {
-  const { workspace, send, busy } = useWorkspace();
+  const { workspace, base, send, busy } = useWorkspace();
   const [params] = useSearchParams();
   const [archive, setArchive] = useState(false);
   const owner = workspace.members.find((m) => m.id === task.ownerId);
@@ -305,7 +309,7 @@ export function TaskDialog({ task }: { task: Task }) {
           <div className="detail-actions">
             <Link
               className="button button-primary"
-              to={`/tasks/${task.id}?edit=1`}
+              to={`${base}/tasks/${task.id}?edit=1`}
             >
               Edit task
             </Link>

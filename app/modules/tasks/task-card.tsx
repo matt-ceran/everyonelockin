@@ -11,7 +11,7 @@ import { useWorkspace } from "../workspace/context";
 import { STATUSES, STATUS_LABELS, type Task } from "./model";
 
 export function TaskCard({ task }: { task: Task }) {
-  const { workspace, send, busy } = useWorkspace();
+  const { workspace, base, send, busy } = useWorkspace();
   const element = useRef<HTMLElement>(null);
   const handle = useRef<HTMLSpanElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -68,7 +68,7 @@ export function TaskCard({ task }: { task: Task }) {
           </span>
         </div>
       </div>
-      <Link className="task-title" to={`/tasks/${task.id}`}>
+      <Link className="task-title" to={`${base}/tasks/${task.id}`}>
         {task.title}
       </Link>
       <div className="task-labels">

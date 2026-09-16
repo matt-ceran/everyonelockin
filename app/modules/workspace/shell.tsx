@@ -1,18 +1,19 @@
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useFetcher } from "react-router";
 import { useState, type ReactNode } from "react";
 import { Avatar } from "../../components/avatar";
 import { Icon, type IconName } from "../../components/icon";
 import { useWorkspace } from "./context";
 
-const links: { to: string; title: string; icon: IconName }[] = [
-  { to: "/", title: "The board", icon: "board" },
-  { to: "/backlog", title: "Backlog", icon: "backlog" },
-  { to: "/my-tasks", title: "My work", icon: "person" },
-  { to: "/activity", title: "What's new", icon: "activity" },
+const links: { suffix: string; title: string; icon: IconName }[] = [
+  { suffix: "", title: "The board", icon: "board" },
+  { suffix: "/backlog", title: "Backlog", icon: "backlog" },
+  { suffix: "/my-tasks", title: "My work", icon: "person" },
+  { suffix: "/activity", title: "What's new", icon: "activity" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { workspace, busy, result, refresh } = useWorkspace();
+  const { workspace, base, busy, result, refresh } = useWorkspace();
+  const logout = useFetcher();
   const [motion, setMotion] = useState(true);
   const complete = workspace.tasks.filter((t) => t.status === "done").length;
   return (
@@ -20,14 +21,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main">
         Skip to the work
       </a>
-      <div className="utility-strip">
-        <span>YOUR LITTLE CORNER OF THE INTERNET</span>
-        <span className="local-label">
-          LOCAL DEMO <span aria-hidden="true">/</span> Saved on this computer
-        </span>
-      </div>
       <header className="masthead">
-        <Link to="/" className="wordmark" aria-label="everyonelockin home">
+        <Link to={base} className="wordmark" aria-label="everyonelockin home">
           everyone<span>lockin</span>
           <b>.com</b>
         </Link>
@@ -49,8 +44,8 @@ export function Shell({ children }: { children: ReactNode }) {
         <nav aria-label="Workspace navigation">
           {links.map((link) => (
             <NavLink
-              key={link.to}
-              to={link.to}
+              key={link.title}
+              to={`${base}${link.suffix}`}
               end
               className={({ isActive }) =>
                 `nav-button ${isActive ? "is-active" : ""}`
@@ -61,7 +56,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <Link to="/my-tasks" className="profile-link">
+        <Link to={`${base}/my-tasks`} className="profile-link">
           <Avatar
             member={workspace.members.find(
               (m) => m.id === workspace.currentMemberId,
@@ -98,6 +93,11 @@ export function Shell({ children }: { children: ReactNode }) {
             <Icon name="refresh" size={14} />
             Refresh
           </button>
+          <logout.Form method="post" action={`${base}/logout`}>
+            <button type="submit" className="text-button">
+              Log out
+            </button>
+          </logout.Form>
           <label>
             <input
               type="checkbox"

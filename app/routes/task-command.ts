@@ -1,11 +1,26 @@
 import { data, redirect, type ActionFunctionArgs } from "react-router";
+import { readSessionMember } from "../modules/membership/auth.server";
+import { getWorkspace } from "../modules/membership/workspaces.server";
+import { requireSameOrigin } from "../platform/demo.server";
 import { commandSchema } from "../modules/tasks/commands";
 import { executeCommand, TaskError } from "../modules/tasks/service.server";
-import { requireDemo, requireSameOrigin } from "../platform/demo.server";
 
-export async function action({ request }: ActionFunctionArgs) {
-  requireDemo(request);
+export async function action({ request, params }: ActionFunctionArgs) {
   requireSameOrigin(request);
+  const workspaceId = params.workspaceId!;
+  const workspace = await getWorkspace(workspaceId);
+  if (!workspace)
+    return data(
+      { ok: false as const, message: "This lock-in no longer exists." },
+      { status: 404 },
+    );
+  const member = await readSessionMember(request, workspaceId);
+  if (!member)
+    return data(
+      { ok: false as const, message: "Log in to make changes." },
+      { status: 403 },
+    );
+  const base = `/w/${workspaceId}`;
   const contentLength = Number(request.headers.get("Content-Length") ?? 0);
   if (contentLength > 32768)
     return data(
@@ -37,10 +52,10 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 422 },
     );
   try {
-    const result = await executeCommand(parsed.data);
+    const result = await executeCommand(parsed.data, workspaceId, member.id);
     if (result.intent === "create" || result.intent === "update")
-      return redirect(`/tasks/${result.taskId}`);
-    if (result.intent === "archive") return redirect("/");
+      return redirect(`${base}/tasks/${result.taskId}`);
+    if (result.intent === "archive") return redirect(base);
     return data(result);
   } catch (error) {
     if (error instanceof TaskError)

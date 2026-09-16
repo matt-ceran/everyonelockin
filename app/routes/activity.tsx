@@ -4,7 +4,7 @@ import { ViewHeading } from "../modules/tasks/board-view";
 import { useWorkspace } from "../modules/workspace/context";
 
 export default function ActivityRoute() {
-  const { workspace } = useWorkspace();
+  const { workspace, base } = useWorkspace();
   return (
     <>
       <ViewHeading
@@ -26,7 +26,9 @@ export default function ActivityRoute() {
                 </strong>{" "}
                 {event.taskId &&
                 workspace.tasks.some((t) => t.id === event.taskId) ? (
-                  <Link to={`/tasks/${event.taskId}`}>{event.message}</Link>
+                  <Link to={`${base}/tasks/${event.taskId}`}>
+                    {event.message}
+                  </Link>
                 ) : (
                   event.message
                 )}

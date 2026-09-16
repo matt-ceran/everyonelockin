@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Outlet,
+  redirect,
   useFetcher,
   useLoaderData,
   useLocation,
@@ -8,6 +9,8 @@ import {
   type LoaderFunctionArgs,
   type ShouldRevalidateFunctionArgs,
 } from "react-router";
+import { readSessionMember } from "../modules/membership/auth.server";
+import { getWorkspace } from "../modules/membership/workspaces.server";
 import {
   commandSchema,
   type CommandFailure,
@@ -18,11 +21,16 @@ import { optimisticWorkspace } from "../modules/tasks/optimistic";
 import { readWorkspace } from "../modules/tasks/repository.server";
 import { WorkspaceContext } from "../modules/workspace/context";
 import { Shell } from "../modules/workspace/shell";
-import { requireDemo } from "../platform/demo.server";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  requireDemo(request);
-  return readWorkspace();
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const workspaceId = params.workspaceId!;
+  const workspace = await getWorkspace(workspaceId);
+  if (!workspace) throw new Response("Lock-in not found.", { status: 404 });
+  const member = await readSessionMember(request, workspaceId);
+  if (!member) return redirect(`/w/${workspaceId}/welcome`);
+  if (!member.avatar) return redirect(`/w/${workspaceId}/pick-icon`);
+  const snapshot = await readWorkspace(workspaceId, member.id);
+  return { snapshot, base: `/w/${workspaceId}` };
 }
 export function shouldRevalidate({
   currentUrl,
@@ -32,7 +40,7 @@ export function shouldRevalidate({
 }: ShouldRevalidateFunctionArgs) {
   if (
     !formMethod &&
-    !currentUrl.pathname.startsWith("/tasks/") &&
+    !currentUrl.pathname.includes("/tasks/") &&
     currentUrl.pathname === nextUrl.pathname &&
     currentUrl.search !== nextUrl.search
   )
@@ -40,7 +48,7 @@ export function shouldRevalidate({
   return defaultShouldRevalidate;
 }
 export default function WorkspaceRoute() {
-  const loaded = useLoaderData<typeof loader>();
+  const { snapshot: loaded, base } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<CommandResult | CommandFailure>();
   const { revalidate, state } = useRevalidator();
   const location = useLocation();
@@ -73,7 +81,7 @@ export default function WorkspaceRoute() {
           mutationId: crypto.randomUUID(),
         }),
       },
-      { method: "post", action: "/resources/tasks" },
+      { method: "post", action: `${base}/resources/tasks` },
     );
   };
   useEffect(() => {
@@ -90,7 +98,7 @@ export default function WorkspaceRoute() {
     if (!busy && pending.sawBusy) pendingFocus.current = null;
   }, [busy, workspace.tasks]);
   useEffect(() => {
-    if (busy || state !== "idle" || location.pathname.startsWith("/tasks/"))
+    if (busy || state !== "idle" || location.pathname.includes("/tasks/"))
       return;
     const refresh = () => {
       if (document.visibilityState === "visible") void revalidate();
@@ -106,6 +114,7 @@ export default function WorkspaceRoute() {
     <WorkspaceContext
       value={{
         workspace,
+        base,
         send,
         busy,
         result: location.key === resultLocation ? fetcher.data : undefined,

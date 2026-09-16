@@ -26,12 +26,11 @@ export function ViewHeading({
   note: string;
   newTask?: boolean;
 }) {
+  const { workspace, base } = useWorkspace();
   return (
     <div className="view-heading">
       <div>
-        <div className="eyebrow">
-          THE STUDIO <span aria-hidden="true">/</span> WORKSPACE 001
-        </div>
+        <div className="eyebrow">{workspace.name}</div>
         <h1>
           {title}
           <span className="heading-period">.</span>
@@ -39,7 +38,7 @@ export function ViewHeading({
         <p>{note}</p>
       </div>
       {newTask && (
-        <Link to="/tasks/new" className="button button-primary">
+        <Link to={`${base}/tasks/new`} className="button button-primary">
           <Icon name="plus" />
           New task
         </Link>
@@ -112,7 +111,7 @@ export function TaskFilters() {
 }
 
 function Column({ status, tasks }: { status: TaskStatus; tasks: Task[] }) {
-  const { busy } = useWorkspace();
+  const { base, busy } = useWorkspace();
   const ref = useRef<HTMLElement>(null);
   const [over, setOver] = useState(false);
   useEffect(() => {
@@ -145,7 +144,7 @@ function Column({ status, tasks }: { status: TaskStatus; tasks: Task[] }) {
           <p className="column-empty">A little room for what's next.</p>
         )}
       </div>
-      <Link className="add-task-link" to={`/tasks/new?status=${status}`}>
+      <Link className="add-task-link" to={`${base}/tasks/new?status=${status}`}>
         <Icon name="plus" size={14} />
         Add a task
       </Link>
@@ -154,7 +153,7 @@ function Column({ status, tasks }: { status: TaskStatus; tasks: Task[] }) {
 }
 
 export function BoardView() {
-  const { workspace, busy, send } = useWorkspace();
+  const { workspace, base, busy, send } = useWorkspace();
   const [params] = useSearchParams();
   const tasks = orderedTasks(
     workspace.tasks.filter((task) =>
@@ -216,7 +215,7 @@ export function BoardView() {
           <strong>
             {workspace.tasks.filter((t) => t.status === "backlog").length} ideas
           </strong>{" "}
-          waiting in the <Link to="/backlog">backlog</Link>.
+          waiting in the <Link to={`${base}/backlog`}>backlog</Link>.
         </span>
         <span>Pick something up. Ask for a hand. Keep it moving.</span>
       </div>

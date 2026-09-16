@@ -5,23 +5,6 @@
   border: 1px solid var(--ink);
   box-shadow: 5px 5px 0 #beb3cb;
 }
-.utility-strip {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 7px 24px;
-  background: var(--purple-dark);
-  color: #fff;
-  font-family: "Courier New", monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-}
-.local-label {
-  color: #e8e0f1;
-}
-.local-label span {
-  margin: 0 7px;
-}
 .masthead {
   min-height: 145px;
   display: flex;
@@ -272,6 +255,109 @@ main {
   height: 23px;
   font-size: 0.75rem;
 }
+img.avatar {
+  object-fit: cover;
+  padding: 0;
+}
+.gate-main {
+  display: flex;
+  justify-content: center;
+  padding: 40px 28px;
+}
+.gate-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 340px;
+}
+.gate-wide {
+  max-width: 560px;
+}
+.gate-card {
+  border: 1px solid var(--ink);
+  background: #fff;
+  box-shadow: 2px 2px 0 #d4cadc;
+  padding: 20px;
+}
+.gate-card h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+.gate-card .button {
+  width: 100%;
+  margin-top: 6px;
+}
+.lockin-link {
+  margin-bottom: 8px;
+}
+.form-field {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+}
+.form-field input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font-weight: 400;
+}
+.form-error {
+  color: #8b2834;
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+.gate-switch {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 14px 0 0;
+}
+.icon-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.gamer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 84px);
+  gap: 10px;
+  justify-content: center;
+  margin: 4px auto 18px;
+}
+.gamer {
+  width: 84px;
+  border: 1px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  background: #111;
+  cursor: pointer;
+  padding: 0;
+}
+.gamer:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.gamer img {
+  width: 82px;
+  height: 82px;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.gamer[aria-pressed="true"] {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .gate-main {
+    padding: 32px 16px;
+  }
+  .gamer-grid {
+    grid-template-columns: repeat(3, 84px);
+  }
+}
 .site-footer {
   display: flex;
   justify-content: space-between;
@@ -394,13 +480,6 @@ main {
   .site-frame {
     margin: 10px;
     box-shadow: 3px 3px #beb3cb;
-  }
-  .utility-strip {
-    padding: 7px 13px;
-    font-size: 0.7rem;
-  }
-  .utility-strip > span:first-child {
-    display: none;
   }
   .masthead {
     min-height: 104px;
