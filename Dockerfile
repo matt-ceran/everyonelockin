@@ -15,6 +15,7 @@ FROM base AS runner
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/build ./build
+COPY --from=build /app/server.js ./server.js
 COPY --from=build /app/app ./app
 COPY --from=build /app/db ./db
 COPY --from=build /app/scripts ./scripts
