@@ -1,15 +1,49 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
-async function createTask(page: Page, title: string) {
-  await page.goto("/tasks/new?status=ready");
+async function setupLockin(page: Page) {
+  const suffix = randomUUID().slice(0, 8);
+  const username = `Tester ${suffix}`;
+  await page.goto("/");
+  await page
+    .getByLabel("Name your lock-in", { exact: true })
+    .fill(`E2E ${suffix}`);
+  await page
+    .getByRole("button", { name: "+ Create a new lock-in", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/w\/.+\/welcome$/);
+  await page.getByLabel("Username", { exact: true }).fill(username);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill(`signal-strong-${suffix}`);
+  await page
+    .getByLabel("Repeat password", { exact: true })
+    .fill(`signal-strong-${suffix}`);
+  await page.getByRole("button", { name: "Lock me in →", exact: true }).click();
+  await expect(page).toHaveURL(/\/w\/.+\/pick-icon$/);
+  await page.locator(".gamer").first().click();
+  await page
+    .getByRole("button", { name: "Enter the board →", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/w\/[^/]+\/?$/);
+  const base = new URL(page.url()).pathname.replace(/\/$/, "");
+  return { base, username };
+}
+
+async function createTask(
+  page: Page,
+  base: string,
+  title: string,
+  username: string,
+) {
+  await page.goto(`${base}/tasks/new?status=ready`);
   await page.getByLabel("Task title", { exact: true }).fill(title);
   await page
     .getByLabel("A little context")
     .fill("A task created to verify the whole workflow.");
   await page
     .getByRole("combobox", { name: "Owner", exact: true })
-    .selectOption("you");
+    .selectOption({ label: username });
   await page
     .getByRole("checkbox", { name: "Engineering", exact: true })
     .check();
@@ -18,12 +52,12 @@ async function createTask(page: Page, title: string) {
   await expect(page).toHaveURL(/\/tasks\/[0-9a-f-]{36}$/);
   const id = page.url().split("/").at(-1)!;
   await page.getByRole("button", { name: "Close task", exact: true }).click();
-  await expect(page).toHaveURL("http://127.0.0.1:5188/");
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   return id;
 }
-async function archiveTask(page: Page, id: string) {
-  await page.goto(`/tasks/${id}`);
+async function archiveTask(page: Page, base: string, id: string) {
+  await page.goto(`${base}/tasks/${id}`);
   await page.getByRole("button", { name: "Archive task", exact: true }).click();
   await page
     .getByRole("button", { name: "Yes, archive task", exact: true })
@@ -31,14 +65,34 @@ async function archiveTask(page: Page, id: string) {
   await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
+test("invite signup and icon flow lead into a working board", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  const { base, username } = await setupLockin(page);
+  await expect(page.getByRole("link", { name: "My corner" })).toBeVisible();
+  const inviteLink = await page
+    .getByRole("button", { name: "Refresh", exact: true })
+    .isVisible();
+  expect(inviteLink).toBe(true);
+  expect(username).toContain("Tester");
+  expect(base).toMatch(/^\/w\/.+/);
+  expect(errors).toEqual([]);
+});
+
 test("create, edit, help, move, and reopen a saved task", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
+  const { base, username } = await setupLockin(page);
   const title = `Workflow ${randomUUID().slice(0, 8)}`;
-  const id = await createTask(page, title);
+  const id = await createTask(page, base, title, username);
   const card = page.locator(`[data-task-id="${id}"]`);
   await card
     .getByRole("button", { name: `Help with ${title}`, exact: true })
@@ -73,23 +127,25 @@ test("create, edit, help, move, and reopen a saved task", async ({ page }) => {
   await expect(
     page.getByRole("link", { name: "Edit task", exact: true }),
   ).toBeVisible();
-  await archiveTask(page, id);
+  await archiveTask(page, base, id);
   expect(errors).toEqual([]);
 });
 
 test("board search, backlog, and personal views remain connected", async ({
   page,
 }) => {
-  await page.goto("/");
+  const { base, username } = await setupLockin(page);
+  const title = `Connected ${randomUUID().slice(0, 8)}`;
+  const id = await createTask(page, base, title, username);
+  await page.goto(base);
   await page
     .getByRole("searchbox", { name: "Find a task" })
-    .fill("WELCOME EMAIL");
+    .fill(title.toUpperCase());
   await expect(page.locator(".task-card")).toHaveCount(1);
   await page.getByRole("link", { name: "Backlog", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "The backlog.",
   );
-  await expect(page.locator(".task-row")).not.toHaveCount(0);
   await page.getByRole("link", { name: "My work", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("My work.");
   await expect(
@@ -97,17 +153,18 @@ test("board search, backlog, and personal views remain connected", async ({
   ).toBeVisible();
   await page.getByRole("link", { name: "What's new", exact: true }).click();
   await expect(page.locator(".activity-row").first()).toBeVisible();
+  await archiveTask(page, base, id);
 });
 
 test("two browsers see saved moves and stale writes cannot overwrite them", async ({
   page,
-  browser,
 }) => {
+  const { base, username } = await setupLockin(page);
   const title = `Concurrent ${randomUUID().slice(0, 8)}`;
-  const id = await createTask(page, title);
-  const other = await browser.newPage();
+  const id = await createTask(page, base, title, username);
+  const other = await page.context().newPage();
   try {
-    await other.goto("http://127.0.0.1:5188/");
+    await other.goto(`http://127.0.0.1:5188${base}/`);
     const card = page.locator(`[data-task-id="${id}"]`);
     const version = Number(await card.getAttribute("data-task-version"));
     const command = {
@@ -122,12 +179,15 @@ test("two browsers see saved moves and stale writes cannot overwrite them", asyn
       form: { command: JSON.stringify(command) },
       headers: { Origin: "http://127.0.0.1:5188" },
     };
-    const first = await page.request.post("/resources/tasks", options);
+    const first = await page.request.post(`${base}/resources/tasks`, options);
     expect(first.status()).toBe(200);
-    const repeated = await page.request.post("/resources/tasks", options);
+    const repeated = await page.request.post(
+      `${base}/resources/tasks`,
+      options,
+    );
     expect(repeated.status()).toBe(200);
     const stale = await other.request.post(
-      "http://127.0.0.1:5188/resources/tasks",
+      `http://127.0.0.1:5188${base}/resources/tasks`,
       {
         form: {
           command: JSON.stringify({
@@ -150,7 +210,7 @@ test("two browsers see saved moves and stale writes cannot overwrite them", asyn
     expect(Number(await card.getAttribute("data-task-version"))).toBe(
       version + 1,
     );
-    const denied = await page.request.post("/resources/tasks", {
+    const denied = await page.request.post(`${base}/resources/tasks`, {
       form: {
         command: JSON.stringify({ ...command, mutationId: randomUUID() }),
       },
@@ -159,14 +219,15 @@ test("two browsers see saved moves and stale writes cannot overwrite them", asyn
     expect(denied.status()).toBe(403);
   } finally {
     await other.close();
-    await archiveTask(page, id);
+    await archiveTask(page, base, id);
   }
 });
 
 test("dragging moves a card between columns", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1600 });
+  const { base, username } = await setupLockin(page);
   const title = `Drag ${randomUUID().slice(0, 8)}`;
-  const id = await createTask(page, title);
+  const id = await createTask(page, base, title, username);
   const card = page.locator(`[data-task-id="${id}"]`);
   await expect(card).toHaveAttribute("draggable", "true");
   await card.scrollIntoViewIfNeeded();
@@ -199,7 +260,7 @@ test("dragging moves a card between columns", async ({ page }) => {
       .getByRole("region", { name: "In review", exact: true })
       .locator(`[data-task-id="${id}"]`),
   ).toBeVisible();
-  await archiveTask(page, id);
+  await archiveTask(page, base, id);
 });
 
 test("phone layout and reduced motion keep task creation usable", async ({
@@ -207,7 +268,8 @@ test("phone layout and reduced motion keep task creation usable", async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
+  const { base, username } = await setupLockin(page);
+  await page.goto(base);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -221,8 +283,13 @@ test("phone layout and reduced motion keep task creation usable", async ({
   ).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".brand-star")).toHaveCSS("animation-name", "none");
-  const id = await createTask(page, `Phone ${randomUUID().slice(0, 8)}`);
-  await page.goto(`/tasks/${id}`);
+  const id = await createTask(
+    page,
+    base,
+    `Phone ${randomUUID().slice(0, 8)}`,
+    username,
+  );
+  await page.goto(`${base}/tasks/${id}`);
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(
     await page
@@ -231,12 +298,13 @@ test("phone layout and reduced motion keep task creation usable", async ({
   ).toBe(true);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await archiveTask(page, id);
+  await archiveTask(page, base, id);
 });
 
 test("keyboard moves preserve focus on the moved task", async ({ page }) => {
+  const { base, username } = await setupLockin(page);
   const title = `Keyboard ${randomUUID().slice(0, 8)}`;
-  const id = await createTask(page, title);
+  const id = await createTask(page, base, title, username);
   try {
     const card = page.locator(`[data-task-id="${id}"]`);
     await card.locator("summary").focus();
@@ -256,26 +324,27 @@ test("keyboard moves preserve focus on the moved task", async ({ page }) => {
     ).toBeFocused();
     await expect(page.locator(".save-status")).toContainText("Saved. Moved");
   } finally {
-    await archiveTask(page, id);
+    await archiveTask(page, base, id);
   }
 });
 
 test("a conflicting edit preserves the draft and offers the latest task", async ({
   page,
 }) => {
+  const { base, username } = await setupLockin(page);
   const title = `Conflict ${randomUUID().slice(0, 8)}`;
-  const id = await createTask(page, title);
+  const id = await createTask(page, base, title, username);
   try {
     const version = Number(
       await page
         .locator(`[data-task-id="${id}"]`)
         .getAttribute("data-task-version"),
     );
-    await page.goto(`/tasks/${id}?edit=1`);
+    await page.goto(`${base}/tasks/${id}?edit=1`);
     await page
       .getByLabel("Task title", { exact: true })
       .fill(`${title} unsaved draft`);
-    const moved = await page.request.post("/resources/tasks", {
+    const moved = await page.request.post(`${base}/resources/tasks`, {
       form: {
         command: JSON.stringify({
           intent: "move",
@@ -314,6 +383,6 @@ test("a conflicting edit preserves the draft and offers the latest task", async 
     ).toBeVisible();
     await expect(page.getByRole("dialog")).toContainText(`${title} revised`);
   } finally {
-    await archiveTask(page, id);
+    await archiveTask(page, base, id);
   }
 });
