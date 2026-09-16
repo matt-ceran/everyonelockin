@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Outlet,
   redirect,
@@ -38,7 +38,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     snapshot,
     base: `/w/${workspaceId}`,
-    quote: pickQuote(),
     inviteCode,
     inviteLink: `${publicOrigin(request)}/join/${inviteCode}`,
   };
@@ -62,13 +61,13 @@ export default function WorkspaceRoute() {
   const {
     snapshot: loaded,
     base,
-    quote,
     inviteCode,
     inviteLink,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<CommandResult | CommandFailure>();
   const { revalidate, state } = useRevalidator();
   const location = useLocation();
+  const quote = useMemo(() => pickQuote(), [location.pathname]);
   const [resultLocation, setResultLocation] = useState<string>();
   const pendingFocus = useRef<{ taskId: string; sawBusy: boolean } | null>(
     null,

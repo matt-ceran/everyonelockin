@@ -80,7 +80,19 @@
   border-color: #6f5489;
 }
 .task-card.is-dragging {
-  opacity: 0.4;
+  opacity: 0.35;
+  border-style: dashed;
+}
+.drag-chip {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--purple);
+  padding: 6px 10px;
+  font:
+    bold 0.8rem "Courier New",
+    monospace;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 .task-card.is-drop-target::before {
   content: "";

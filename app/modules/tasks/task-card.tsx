@@ -4,6 +4,7 @@ import {
   draggable,
   dropTargetForElements,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/utils/set-custom-native-drag-preview";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { Avatar } from "../../components/avatar";
 import { Icon } from "../../components/icon";
@@ -24,6 +25,20 @@ export function TaskCard({ task }: { task: Task }) {
         element: element.current,
         canDrag: () => !busy,
         getInitialData: () => ({ taskId: task.id }),
+        onGenerateDragPreview: ({ nativeSetDragImage }) => {
+          setCustomNativeDragPreview({
+            nativeSetDragImage,
+            render: ({ container }) => {
+              const chip = document.createElement("div");
+              chip.className = "drag-chip";
+              chip.textContent = `Moving EL-${String(task.number).padStart(2, "0")}`;
+              container.appendChild(chip);
+              return () => {
+                container.removeChild(chip);
+              };
+            },
+          });
+        },
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
       }),
