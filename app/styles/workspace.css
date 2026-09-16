@@ -149,6 +149,26 @@ main {
   gap: 22px;
   margin-bottom: 16px;
 }
+.quote-block {
+  max-width: 640px;
+  transform: rotate(-0.6deg);
+}
+.quote-text {
+  font-family:
+    "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Segoe Print",
+    "Bradley Hand", "Comic Neue", cursive;
+  font-size: 1.15rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.quote-author {
+  font-family: "Courier New", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
 .eyebrow {
   color: var(--muted);
   font-size: 0.7rem;

@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { Quote } from "../quotes/quotes";
 import type {
   CommandFailure,
   CommandResult,
@@ -9,6 +10,7 @@ import type { WorkspaceSnapshot } from "../tasks/model";
 interface WorkspaceContextValue {
   workspace: WorkspaceSnapshot;
   base: string;
+  quote: Quote;
   send: (command: TaskCommandInput, options?: { focusTask?: boolean }) => void;
   busy: boolean;
   result?: CommandResult | CommandFailure;

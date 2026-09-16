@@ -24,13 +24,14 @@ export function ViewHeading({
   title: string;
   newTask?: boolean;
 }) {
-  const { workspace, base } = useWorkspace();
+  const { base, quote } = useWorkspace();
   return (
     <div className="view-heading">
-      <div>
-        <div className="eyebrow">{workspace.name}</div>
-        <h1 className="sr-only">{title}</h1>
+      <div className="quote-block">
+        <p className="quote-text">“{quote.text}”</p>
+        <p className="quote-author">- {quote.author}</p>
       </div>
+      <h1 className="sr-only">{title}</h1>
       {newTask && (
         <Link to={`${base}/tasks/new`} className="button button-primary">
           <Icon name="plus" />
