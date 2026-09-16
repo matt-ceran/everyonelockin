@@ -231,7 +231,7 @@ test("dragging moves a card between columns", async ({ page }) => {
   const card = page.locator(`[data-task-id="${id}"]`);
   await expect(card).toHaveAttribute("draggable", "true");
   await card.scrollIntoViewIfNeeded();
-  const source = await card.locator(".drag-handle").boundingBox();
+  const source = await card.locator(".task-number").boundingBox();
   const destination = await page
     .getByRole("region", { name: "In review", exact: true })
     .locator(".column-heading")

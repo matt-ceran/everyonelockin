@@ -13,17 +13,15 @@ import { STATUSES, STATUS_LABELS, type Task } from "./model";
 export function TaskCard({ task }: { task: Task }) {
   const { workspace, base, send, busy } = useWorkspace();
   const element = useRef<HTMLElement>(null);
-  const handle = useRef<HTMLSpanElement>(null);
   const [dragging, setDragging] = useState(false);
   const [over, setOver] = useState(false);
   const owner = workspace.members.find((m) => m.id === task.ownerId);
   const helping = task.helperIds.includes(workspace.currentMemberId);
   useEffect(() => {
-    if (!element.current || !handle.current) return;
+    if (!element.current) return;
     return combine(
       draggable({
         element: element.current,
-        dragHandle: handle.current,
         canDrag: () => !busy,
         getInitialData: () => ({ taskId: task.id }),
         onDragStart: () => setDragging(true),
@@ -63,12 +61,16 @@ export function TaskCard({ task }: { task: Task }) {
               !
             </span>
           )}
-          <span ref={handle} className="drag-handle" aria-hidden="true">
+          <span className="drag-handle" aria-hidden="true">
             <Icon name="grip" size={16} />
           </span>
         </div>
       </div>
-      <Link className="task-title" to={`${base}/tasks/${task.id}`}>
+      <Link
+        className="task-title"
+        to={`${base}/tasks/${task.id}`}
+        onPointerDownCapture={(event) => event.stopPropagation()}
+      >
         {task.title}
       </Link>
       <div className="task-labels">
@@ -92,6 +94,7 @@ export function TaskCard({ task }: { task: Task }) {
           aria-label={`${helping ? "Stop helping with" : "Help with"} ${task.title}`}
           title={helping ? "You're helping" : "I can help"}
           disabled={busy}
+          onPointerDownCapture={(event) => event.stopPropagation()}
           onClick={() =>
             send({
               intent: "help",
@@ -109,7 +112,10 @@ export function TaskCard({ task }: { task: Task }) {
           )}
         </button>
       </div>
-      <details className="move-menu">
+      <details
+        className="move-menu"
+        onPointerDownCapture={(event) => event.stopPropagation()}
+      >
         <summary aria-label={`Move ${task.title}`}>
           Move <span aria-hidden="true">▾</span>
         </summary>

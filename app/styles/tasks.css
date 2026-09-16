@@ -66,6 +66,15 @@
   padding: 12px 12px 8px;
   border: 1px solid #a89aaf;
   box-shadow: 2px 2px 0 #d4cadc;
+  cursor: grab;
+}
+.task-card:active {
+  cursor: grabbing;
+}
+.task-card a,
+.task-card button,
+.task-card summary {
+  cursor: pointer;
 }
 .task-card:hover {
   border-color: #6f5489;
