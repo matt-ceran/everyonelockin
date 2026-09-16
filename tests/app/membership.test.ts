@@ -5,6 +5,8 @@ import {
   isValidWorkspaceId,
   normalizeInviteCode,
   slugify,
+  validateLabelColor,
+  validateLabelName,
   validatePassword,
   validateUsername,
   validateWorkspaceName,
@@ -13,6 +15,8 @@ import {
 const nameRange = /2 to 60/;
 const userRange = /2 to 24/;
 const passwordRange = /8 to 128/;
+const labelRange = /2 to 30/;
+const labelColors = /label colors/;
 
 describe("membership validation", () => {
   it("collapses extra whitespace so signup and login agree", () => {
@@ -51,6 +55,13 @@ describe("membership validation", () => {
     assert.equal(isValidWorkspaceId("war-room"), true);
     assert.equal(isValidWorkspaceId("a;b=c"), false);
     assert.equal(isValidWorkspaceId(""), false);
+  });
+
+  it("bounds label names and colors", () => {
+    assert.throws(() => validateLabelName("x"), labelRange);
+    assert.equal(validateLabelName("  Launch stuff "), "Launch stuff");
+    assert.throws(() => validateLabelColor("neon"), labelColors);
+    assert.equal(validateLabelColor("green"), "green");
   });
 });
 

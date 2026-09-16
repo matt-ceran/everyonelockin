@@ -15,7 +15,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { STATUSES, PRIORITIES } from "../../modules/tasks/model";
-import type { CommandResult } from "../../modules/tasks/commands";
+import type { CommandResult, LabelResult } from "../../modules/tasks/commands";
 
 export const statusEnum = pgEnum("task_status", STATUSES);
 export const priorityEnum = pgEnum("task_priority", PRIORITIES);
@@ -64,7 +64,10 @@ export const labels = pgTable(
     name: text("name").notNull(),
     color: text("color").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.workspaceId, t.id] })],
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.id] }),
+    uniqueIndex("label_name_unique").on(t.workspaceId, sql`lower(${t.name})`),
+  ],
 );
 export const tasks = pgTable(
   "tasks",
@@ -178,7 +181,7 @@ export const receipts = pgTable(
       .references(() => workspaces.id),
     actorId: text("actor_id").notNull(),
     payloadHash: text("payload_hash").notNull(),
-    result: jsonb("result").$type<CommandResult>().notNull(),
+    result: jsonb("result").$type<CommandResult | LabelResult>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

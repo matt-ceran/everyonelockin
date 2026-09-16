@@ -51,3 +51,18 @@ export function validatePassword(password: string) {
 export function isValidWorkspaceId(value: string) {
   return /^[a-z0-9-]{1,64}$/.test(value);
 }
+
+export const LABEL_COLORS = ["purple", "pink", "blue", "green", "orange"];
+
+export function validateLabelName(name: string) {
+  const trimmed = collapseName(name);
+  if (trimmed.length < 2 || trimmed.length > 30)
+    throw new MembershipError("Labels are 2 to 30 characters.");
+  return trimmed;
+}
+
+export function validateLabelColor(color: string) {
+  if (!LABEL_COLORS.includes(color))
+    throw new MembershipError("Pick one of the label colors.");
+  return color;
+}

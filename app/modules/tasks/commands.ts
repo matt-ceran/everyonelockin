@@ -34,6 +34,8 @@ export const commandSchema = z.discriminatedUnion("intent", [
   }),
   z.object({ ...existing, intent: z.literal("help"), helping: z.boolean() }),
   z.object({ ...existing, intent: z.literal("archive") }),
+  z.object({ ...existing, intent: z.literal("restore") }),
+  z.object({ ...existing, intent: z.literal("delete") }),
 ]);
 export type TaskCommand = z.infer<typeof commandSchema>;
 export type TaskCommandInput = TaskCommand extends infer C
@@ -51,4 +53,31 @@ export interface CommandFailure {
   ok: false;
   message: string;
   conflict?: boolean;
+}
+export const labelSchema = z.discriminatedUnion("intent", [
+  z.object({
+    mutationId: z.uuid(),
+    intent: z.literal("create"),
+    name: z.string(),
+    color: z.string(),
+  }),
+  z.object({
+    mutationId: z.uuid(),
+    intent: z.literal("rename"),
+    labelId: z.string().max(60),
+    name: z.string(),
+    color: z.string(),
+  }),
+  z.object({
+    mutationId: z.uuid(),
+    intent: z.literal("delete"),
+    labelId: z.string().max(60),
+  }),
+]);
+export type LabelCommand = z.infer<typeof labelSchema>;
+export interface LabelResult {
+  ok: true;
+  labelId: string;
+  message: string;
+  intent: LabelCommand["intent"];
 }

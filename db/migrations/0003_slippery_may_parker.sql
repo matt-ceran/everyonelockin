@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "label_name_unique" ON "labels" USING btree ("workspace_id",lower("name"));

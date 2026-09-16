@@ -16,6 +16,7 @@ import {
   type TaskStatus,
 } from "./model";
 import { TaskCard } from "./task-card";
+import { LabelManager } from "./label-manager";
 
 export function ViewHeading({
   title,
@@ -100,6 +101,7 @@ export function TaskFilters() {
             onChange={(e) => update("q", e.target.value)}
           />
         </label>
+        <LabelManager />
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export default [
     route("w/:workspaceId/tasks/new", "routes/new-task.tsx"),
     route("w/:workspaceId/tasks/:taskId", "routes/task.tsx"),
     route("w/:workspaceId/resources/tasks", "routes/task-command.ts"),
+    route("w/:workspaceId/resources/labels", "routes/label-command.ts"),
     route("w/:workspaceId/logout", "routes/logout.ts"),
   ]),
   route("health", "routes/health.ts"),

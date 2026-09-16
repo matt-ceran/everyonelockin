@@ -334,6 +334,49 @@
   color: var(--muted);
   margin-bottom: 22px;
 }
+.archived-section {
+  margin-top: 26px;
+  border: 1px dashed #b4a4c1;
+  background: #f4eff8;
+}
+.archived-section > summary {
+  padding: 13px 18px;
+  font:
+    bold 0.8rem "Courier New",
+    monospace;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.archived-list {
+  border-top: 1px dashed #b4a4c1;
+}
+.archived-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  flex-wrap: wrap;
+}
+.archived-row + .archived-row {
+  border-top: 1px solid var(--line);
+}
+.archived-row > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.archived-row strong {
+  font-size: 0.9rem;
+}
+.archived-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .dialog-overlay {
   position: fixed;
   inset: 0;
@@ -386,6 +429,54 @@
 }
 .task-form {
   padding: 24px 28px 28px;
+}
+.label-dialog .dialog-note {
+  padding: 18px 24px 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.label-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 24px 24px;
+}
+.label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px 12px;
+  box-shadow: 2px 2px 0 #d4cadc;
+}
+.label-row input {
+  flex: 1;
+  min-width: 120px;
+}
+.label-new {
+  border-style: dashed;
+}
+.swatches {
+  display: inline-flex;
+  gap: 5px;
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--ink);
+  background: var(--tag-bg);
+  box-shadow: inset 1px 1px #ffffffb3;
+  padding: 0;
+}
+.swatch.is-picked {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+.label-row .form-error {
+  flex-basis: 100%;
+  margin: 2px 0 0;
 }
 .form-field {
   display: grid;
