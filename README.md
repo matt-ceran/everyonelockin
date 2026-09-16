@@ -88,12 +88,16 @@ For a local production-build preview, stop the development server, run `npm run 
 
 ## Deploy to Fly.io
 
-The app ships with a `Dockerfile` and `fly.toml`. You need the Fly CLI and a managed Postgres cluster.
+The app ships with a `Dockerfile` and `fly.toml`. The cheapest path is a free Neon Postgres database plus a Fly app.
 
 ```sh
 fly auth signup
-fly mpg create --name everyonelockin-db --region sjc
-fly secrets set DATABASE_URL="postgres://..."
+```
+
+Create a free project at https://neon.tech (US West region) and copy the pooled connection string. Then:
+
+```sh
+fly secrets set DATABASE_URL="postgres://..." --app everyonelockin
 fly deploy
 ```
 
