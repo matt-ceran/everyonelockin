@@ -11,6 +11,7 @@
     "start:test": "node ./node_modules/@react-router/serve/bin.cjs ./build-test/server/index.js",
     "build": "react-router build",
     "start": "node --env-file=.env ./node_modules/@react-router/serve/bin.cjs ./build/server/index.js",
+    "start:prod": "node ./node_modules/@react-router/serve/bin.cjs ./build/server/index.js",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint app scripts/db.ts scripts/*.mjs tests/app vite.config.ts react-router.config.ts drizzle.config.ts playwright.config.ts eslint.config.js",
     "test": "tsx --test tests/app/*.test.ts",
@@ -20,6 +21,7 @@
     "format:check": "prettier --check app 'scripts/*.{ts,mjs}' tests/app '*.{ts,js,json}' '.github/**/*.yml' .prettierrc.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file=.env scripts/db.ts migrate",
+    "db:migrate:prod": "node ./node_modules/tsx/dist/cli.mjs scripts/db.ts migrate",
     "db:seed": "tsx --env-file=.env scripts/db.ts seed",
     "db:up": "node scripts/db-start.mjs"
   },

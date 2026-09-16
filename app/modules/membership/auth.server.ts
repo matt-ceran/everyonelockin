@@ -26,7 +26,10 @@ function cookieSecure(secure: boolean) {
 }
 
 export function isSecureRequest(request: Request) {
-  return new URL(request.url).protocol === "https:";
+  if (new URL(request.url).protocol === "https:") return true;
+  return (
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https"
+  );
 }
 
 export async function hashPassword(password: string) {
