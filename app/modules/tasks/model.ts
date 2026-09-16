@@ -28,6 +28,7 @@ export interface Member {
   initials: string;
   color: string;
   role: string;
+  avatar: string | null;
 }
 export interface Label {
   id: string;

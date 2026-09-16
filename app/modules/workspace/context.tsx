@@ -8,6 +8,7 @@ import type { WorkspaceSnapshot } from "../tasks/model";
 
 interface WorkspaceContextValue {
   workspace: WorkspaceSnapshot;
+  base: string;
   send: (command: TaskCommandInput, options?: { focusTask?: boolean }) => void;
   busy: boolean;
   result?: CommandResult | CommandFailure;

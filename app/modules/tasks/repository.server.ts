@@ -1,12 +1,11 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../../platform/db/client.server";
 import * as tables from "../../platform/db/schema.server";
-import { DEMO_MEMBER, DEMO_WORKSPACE } from "../../platform/demo.server";
 import type { WorkspaceSnapshot } from "./model";
 
 export async function readWorkspace(
-  workspaceId = DEMO_WORKSPACE,
-  currentMemberId = DEMO_MEMBER,
+  workspaceId: string,
+  currentMemberId: string,
 ): Promise<WorkspaceSnapshot> {
   return db.transaction(
     async (tx) => {
@@ -23,8 +22,15 @@ export async function readWorkspace(
             isNull(tables.tasks.archivedAt),
           ),
         );
-      const members = await tx
-        .select()
+      const memberRows = await tx
+        .select({
+          id: tables.members.id,
+          name: tables.members.name,
+          initials: tables.members.initials,
+          color: tables.members.color,
+          role: tables.members.role,
+          avatar: tables.members.avatar,
+        })
         .from(tables.members)
         .where(eq(tables.members.workspaceId, workspaceId));
       const labels = await tx
@@ -45,12 +51,12 @@ export async function readWorkspace(
         .where(eq(tables.activity.workspaceId, workspaceId))
         .orderBy(desc(tables.activity.createdAt))
         .limit(100);
-      if (!workspace[0] || !members.some((m) => m.id === currentMemberId))
+      if (!workspace[0] || !memberRows.some((m) => m.id === currentMemberId))
         throw new Response("Workspace not found.", { status: 404 });
       return {
         name: workspace[0].name,
         currentMemberId,
-        members,
+        members: memberRows,
         labels,
         tasks: taskRows.map((task) => ({
           ...task,

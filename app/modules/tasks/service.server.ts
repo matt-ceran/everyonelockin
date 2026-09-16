@@ -11,11 +11,7 @@ import {
   taskLabels,
   tasks,
 } from "../../platform/db/schema.server";
-import {
-  DEMO_BOARD,
-  DEMO_MEMBER,
-  DEMO_WORKSPACE,
-} from "../../platform/demo.server";
+import { MAIN_BOARD } from "../membership/workspaces.server";
 import { STATUS_LABELS } from "./model";
 import type { CommandResult, TaskCommand } from "./commands";
 
@@ -30,8 +26,8 @@ export class TaskError extends Error {
 
 export async function executeCommand(
   command: TaskCommand,
-  workspaceId = DEMO_WORKSPACE,
-  actorId = DEMO_MEMBER,
+  workspaceId: string,
+  actorId: string,
 ): Promise<CommandResult> {
   const payloadHash = createHash("sha256")
     .update(JSON.stringify(command))
@@ -42,7 +38,7 @@ export async function executeCommand(
       .select()
       .from(boards)
       .where(
-        and(eq(boards.workspaceId, workspaceId), eq(boards.id, DEMO_BOARD)),
+        and(eq(boards.workspaceId, workspaceId), eq(boards.id, MAIN_BOARD)),
       )
       .for("update");
     if (!board[0])
@@ -108,7 +104,7 @@ export async function executeCommand(
         .where(
           and(
             eq(tasks.workspaceId, workspaceId),
-            eq(tasks.boardId, DEMO_BOARD),
+            eq(tasks.boardId, MAIN_BOARD),
             eq(tasks.status, command.status),
             isNull(tasks.archivedAt),
           ),
@@ -119,7 +115,7 @@ export async function executeCommand(
         .insert(tasks)
         .values({
           workspaceId,
-          boardId: DEMO_BOARD,
+          boardId: MAIN_BOARD,
           title: command.title,
           description: command.description,
           status: command.status,
@@ -173,7 +169,7 @@ export async function executeCommand(
           .where(
             and(
               eq(tasks.workspaceId, workspaceId),
-              eq(tasks.boardId, DEMO_BOARD),
+              eq(tasks.boardId, MAIN_BOARD),
               eq(tasks.status, command.status),
               ne(tasks.id, task.id),
               isNull(tasks.archivedAt),

@@ -21,6 +21,7 @@ export const priorityEnum = pgEnum("task_priority", PRIORITIES);
 export const workspaces = pgTable("workspaces", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  inviteCode: text("invite_code").notNull().default("").unique(),
 });
 export const members = pgTable(
   "members",
@@ -33,6 +34,8 @@ export const members = pgTable(
     initials: text("initials").notNull(),
     color: text("color").notNull(),
     role: text("role").notNull(),
+    passwordHash: text("password_hash").notNull().default(""),
+    avatar: text("avatar"),
   },
   (t) => [primaryKey({ columns: [t.workspaceId, t.id] })],
 );
@@ -182,3 +185,24 @@ export const taskRelations = relations(tasks, ({ many }) => ({
   labels: many(taskLabels),
   helpers: many(taskHelpers),
 }));
+export const sessions = pgTable(
+  "sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id),
+    memberId: text("member_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.workspaceId, t.memberId],
+      foreignColumns: [members.workspaceId, members.id],
+    }).onDelete("cascade"),
+    index("session_member").on(t.workspaceId, t.memberId),
+  ],
+);

@@ -13,3 +13,6 @@ build-test/
 coverage/
 test-results/
 playwright-report/
+public/gamer-icons/*
+!public/gamer-icons/.gitkeep
+!public/gamer-icons/README.md
