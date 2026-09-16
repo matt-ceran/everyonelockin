@@ -11,6 +11,8 @@ interface WorkspaceContextValue {
   workspace: WorkspaceSnapshot;
   base: string;
   quote: Quote;
+  inviteCode: string;
+  inviteLink: string;
   send: (command: TaskCommandInput, options?: { focusTask?: boolean }) => void;
   busy: boolean;
   result?: CommandResult | CommandFailure;

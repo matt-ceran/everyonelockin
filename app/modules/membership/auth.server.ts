@@ -32,6 +32,18 @@ export function isSecureRequest(request: Request) {
   );
 }
 
+export function publicOrigin(request: Request) {
+  const url = new URL(request.url);
+  const proto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    url.protocol.replace(":", "");
+  const host =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host") ||
+    url.host;
+  return `${proto}://${host}`;
+}
+
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const derived = (await scryptAsync(password, salt, 64)) as Buffer;

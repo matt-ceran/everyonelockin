@@ -53,3 +53,26 @@ describe("membership validation", () => {
     assert.equal(isValidWorkspaceId(""), false);
   });
 });
+
+describe("public origin", () => {
+  it("uses forwarded proto and host behind a proxy", async () => {
+    process.env.DATABASE_URL ??= "postgresql://lockin:test@localhost:1/lockin";
+    const { publicOrigin } =
+      await import("../../app/modules/membership/auth.server");
+    assert.equal(
+      publicOrigin(new Request("http://127.0.0.1:3001/w/abc")),
+      "http://127.0.0.1:3001",
+    );
+    assert.equal(
+      publicOrigin(
+        new Request("http://127.0.0.1:3001/w/abc", {
+          headers: {
+            "x-forwarded-proto": "https",
+            "x-forwarded-host": "everyonelockin.com",
+          },
+        }),
+      ),
+      "https://everyonelockin.com",
+    );
+  });
+});

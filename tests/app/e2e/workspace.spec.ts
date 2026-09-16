@@ -65,6 +65,53 @@ async function archiveTask(page: Page, base: string, id: string) {
   await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
+test("invite link brings a second member into the same lock-in", async ({
+  page,
+  browser,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const { base } = await setupLockin(page);
+  const code = (await page.locator(".share-code").textContent())?.trim();
+  expect(code).toMatch(/^[A-Z0-9]{3}-[A-Z0-9]{5}$/);
+  await page.context().grantPermissions(["clipboard-write", "clipboard-read"]);
+  await page.getByRole("button", { name: "Copy link", exact: true }).click();
+  await expect(page.getByText("Copied", { exact: true })).toBeVisible();
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain(`/join/${code}`);
+  const other = await browser.newPage();
+  try {
+    await other.goto(`/join/${code}`);
+    await expect(other).toHaveURL(/\/w\/.+\/welcome$/);
+    const suffix = randomUUID().slice(0, 8);
+    await other
+      .getByLabel("Username", { exact: true })
+      .fill(`Teammate ${suffix}`);
+    await other
+      .getByLabel("Password", { exact: true })
+      .fill(`signal-strong-${suffix}`);
+    await other
+      .getByLabel("Repeat password", { exact: true })
+      .fill(`signal-strong-${suffix}`);
+    await other
+      .getByRole("button", { name: "Lock me in →", exact: true })
+      .click();
+    await expect(other).toHaveURL(/\/w\/.+\/pick-icon$/);
+    await other.locator(".gamer").first().click();
+    await other
+      .getByRole("button", { name: "Enter the board →", exact: true })
+      .click();
+    await expect(other).toHaveURL(`http://127.0.0.1:5188${base}`);
+    await other.reload();
+    await expect(other.locator(".share-code")).toHaveText(code!);
+  } finally {
+    await other.close();
+  }
+  await page.reload();
+  await expect(page.getByText("2 people. One place.")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("invite signup and icon flow lead into a working board", async ({
   page,
 }) => {

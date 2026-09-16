@@ -12,9 +12,11 @@ const links: { suffix: string; title: string; icon: IconName }[] = [
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { workspace, base, busy, result, refresh } = useWorkspace();
+  const { workspace, base, busy, result, refresh, inviteCode, inviteLink } =
+    useWorkspace();
   const logout = useFetcher();
   const [motion, setMotion] = useState(true);
+  const [copied, setCopied] = useState(false);
   const complete = workspace.tasks.filter((t) => t.status === "done").length;
   return (
     <div className={`site-frame ${motion ? "motion-on" : "motion-off"}`}>
@@ -56,15 +58,53 @@ export function Shell({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <Link to={`${base}/my-tasks`} className="profile-link">
-          <Avatar
-            member={workspace.members.find(
-              (m) => m.id === workspace.currentMemberId,
+        <div className="corner-group">
+          <div className="share-box">
+            <span className="share-label">Invite</span>
+            <code className="share-code">{inviteCode}</code>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => {
+                const done = () => setCopied(true);
+                if (navigator.clipboard?.writeText) {
+                  void navigator.clipboard
+                    .writeText(inviteLink)
+                    .then(done)
+                    .catch(() => setCopied(false));
+                } else {
+                  const field = document.createElement("textarea");
+                  field.value = inviteLink;
+                  document.body.appendChild(field);
+                  field.select();
+                  try {
+                    document.execCommand("copy");
+                    done();
+                  } catch {
+                    setCopied(false);
+                  }
+                  field.remove();
+                }
+              }}
+            >
+              Copy link
+            </button>
+            {copied && (
+              <span className="share-copied" role="status">
+                Copied
+              </span>
             )}
-            small
-          />
-          <span>My corner</span>
-        </Link>
+          </div>
+          <Link to={`${base}/my-tasks`} className="profile-link">
+            <Avatar
+              member={workspace.members.find(
+                (m) => m.id === workspace.currentMemberId,
+              )}
+              small
+            />
+            <span>My corner</span>
+          </Link>
+        </div>
       </div>
       <main id="main" tabIndex={-1}>
         {children}

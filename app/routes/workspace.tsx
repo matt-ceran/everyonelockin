@@ -9,7 +9,10 @@ import {
   type LoaderFunctionArgs,
   type ShouldRevalidateFunctionArgs,
 } from "react-router";
-import { readSessionMember } from "../modules/membership/auth.server";
+import {
+  publicOrigin,
+  readSessionMember,
+} from "../modules/membership/auth.server";
 import { getWorkspace } from "../modules/membership/workspaces.server";
 import { pickQuote } from "../modules/quotes/quotes";
 import {
@@ -31,7 +34,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!member) return redirect(`/w/${workspaceId}/welcome`);
   if (!member.avatar) return redirect(`/w/${workspaceId}/pick-icon`);
   const snapshot = await readWorkspace(workspaceId, member.id);
-  return { snapshot, base: `/w/${workspaceId}`, quote: pickQuote() };
+  const inviteCode = workspace.inviteCode;
+  return {
+    snapshot,
+    base: `/w/${workspaceId}`,
+    quote: pickQuote(),
+    inviteCode,
+    inviteLink: `${publicOrigin(request)}/join/${inviteCode}`,
+  };
 }
 export function shouldRevalidate({
   currentUrl,
@@ -49,7 +59,13 @@ export function shouldRevalidate({
   return defaultShouldRevalidate;
 }
 export default function WorkspaceRoute() {
-  const { snapshot: loaded, base, quote } = useLoaderData<typeof loader>();
+  const {
+    snapshot: loaded,
+    base,
+    quote,
+    inviteCode,
+    inviteLink,
+  } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<CommandResult | CommandFailure>();
   const { revalidate, state } = useRevalidator();
   const location = useLocation();
@@ -117,6 +133,8 @@ export default function WorkspaceRoute() {
         workspace,
         base,
         quote,
+        inviteCode,
+        inviteLink,
         send,
         busy,
         result: location.key === resultLocation ? fetcher.data : undefined,
