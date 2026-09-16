@@ -69,7 +69,9 @@
   transform: rotate(-10deg);
 }
 .motion-on .brand-star {
-  animation: star-welcome 3.8s steps(16, end) 1;
+  animation:
+    star-welcome 3.8s steps(16, end) 1,
+    star-drift 6s steps(36, end) 3.8s infinite;
 }
 @keyframes star-welcome {
   0% {
@@ -80,6 +82,15 @@
   }
   100% {
     transform: rotate(-10deg) scale(1);
+  }
+}
+@keyframes star-drift {
+  0%,
+  100% {
+    transform: rotate(-10deg) scale(1);
+  }
+  50% {
+    transform: rotate(-2deg) scale(1.05);
   }
 }
 .navigation-row {
@@ -136,7 +147,7 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 22px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 .eyebrow {
   color: var(--muted);
@@ -160,12 +171,8 @@ main {
 .heading-period {
   color: var(--purple);
 }
-.view-heading p {
-  font-size: 0.875rem;
-  color: var(--muted);
-}
 .view-heading > .button {
-  margin-top: 16px;
+  margin-top: 0;
 }
 .filter-bar {
   display: flex;
@@ -588,9 +595,6 @@ img.avatar {
     width: 14px;
     height: 14px;
   }
-  .view-heading p {
-    max-width: 210px;
-  }
   .view-heading > .button {
     font-size: 0.8rem;
   }
@@ -619,8 +623,5 @@ img.avatar {
   }
   .view-heading > .button {
     margin-top: 0;
-  }
-  .view-heading p {
-    max-width: none;
   }
 }

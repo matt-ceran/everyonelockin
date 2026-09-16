@@ -144,10 +144,10 @@ test("board search, backlog, and personal views remain connected", async ({
   await expect(page.locator(".task-card")).toHaveCount(1);
   await page.getByRole("link", { name: "Backlog", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "The backlog.",
+    "The backlog",
   );
   await page.getByRole("link", { name: "My work", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("My work.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("My work");
   await expect(
     page.getByText("Owning it", { exact: true }).first(),
   ).toBeVisible();

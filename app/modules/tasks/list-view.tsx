@@ -25,14 +25,7 @@ export function TaskListView({ mine = false }: { mine?: boolean }) {
   );
   return (
     <>
-      <ViewHeading
-        title={mine ? "My work" : "The backlog"}
-        note={
-          mine
-            ? "What you're owning. Where you're lending a hand."
-            : "A home for the ideas whose time is still coming."
-        }
-      />
+      <ViewHeading title={mine ? "My work" : "The backlog"} />
       <TaskFilters />
       {tasks.length ? (
         <div className="task-list">

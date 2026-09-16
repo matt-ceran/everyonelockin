@@ -19,11 +19,9 @@ import { TaskCard } from "./task-card";
 
 export function ViewHeading({
   title,
-  note,
   newTask = true,
 }: {
   title: string;
-  note: string;
   newTask?: boolean;
 }) {
   const { workspace, base } = useWorkspace();
@@ -31,11 +29,7 @@ export function ViewHeading({
     <div className="view-heading">
       <div>
         <div className="eyebrow">{workspace.name}</div>
-        <h1>
-          {title}
-          <span className="heading-period">.</span>
-        </h1>
-        <p>{note}</p>
+        <h1 className="sr-only">{title}</h1>
       </div>
       {newTask && (
         <Link to={`${base}/tasks/new`} className="button button-primary">
@@ -196,10 +190,7 @@ export function BoardView() {
   );
   return (
     <>
-      <ViewHeading
-        title="The board"
-        note="Good ideas, meet a little follow-through."
-      />
+      <ViewHeading title="The board" />
       <TaskFilters />
       <div className="board-grid">
         {ACTIVE_STATUSES.map((status) => (

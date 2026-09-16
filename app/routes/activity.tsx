@@ -7,11 +7,7 @@ export default function ActivityRoute() {
   const { workspace, base } = useWorkspace();
   return (
     <>
-      <ViewHeading
-        title="What's new"
-        note="The little things that move us forward."
-        newTask={false}
-      />
+      <ViewHeading title="What's new" newTask={false} />
       <div className="activity-list">
         {workspace.activity.map((event) => (
           <article className="activity-row" key={event.id}>
