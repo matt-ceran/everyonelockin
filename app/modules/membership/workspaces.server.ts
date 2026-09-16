@@ -11,6 +11,15 @@ import {
 } from "../../platform/db/schema.server";
 import { demoLabels } from "../workspace/demo-data";
 import { hashPassword, verifyPassword } from "./auth.server";
+import {
+  MembershipError,
+  collapseName,
+  normalizeInviteCode,
+  slugify,
+  validatePassword,
+  validateUsername,
+  validateWorkspaceName,
+} from "./validation";
 
 export const MAIN_BOARD = "main";
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -23,24 +32,15 @@ const AVATAR_EXTENSIONS = new Set([
   ".svg",
 ]);
 const MEMBER_COLORS = ["purple", "pink", "blue", "green", "orange"];
-const USERNAME_PATTERN = /^[A-Za-z0-9 _.'-]{2,24}$/;
+const DUMMY_HASH = `scrypt$${"0".repeat(32)}$${"0".repeat(128)}`;
 
-export class MembershipError extends Error {
-  constructor(
-    message: string,
-    public status = 400,
-  ) {
-    super(message);
-  }
-}
-
-export function slugify(value: string, fallback: string) {
-  const slug = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 24);
-  return slug || fallback;
+function isUniqueViolation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
 }
 
 function randomCode(length: number) {
@@ -48,10 +48,6 @@ function randomCode(length: number) {
   let code = "";
   for (const byte of bytes) code += CODE_ALPHABET[byte! % CODE_ALPHABET.length];
   return code;
-}
-
-export function normalizeInviteCode(value: string) {
-  return value.toUpperCase().replace(/[\s]/g, "");
 }
 
 export async function getWorkspace(workspaceId: string) {
@@ -64,10 +60,12 @@ export async function getWorkspace(workspaceId: string) {
 }
 
 export async function getWorkspaceByCode(code: string) {
+  const normalized = normalizeInviteCode(code);
+  if (!normalized) return null;
   const rows = await db
     .select()
     .from(workspaces)
-    .where(eq(workspaces.inviteCode, normalizeInviteCode(code)))
+    .where(sql`replace(${workspaces.inviteCode}, '-', '') = ${normalized}`)
     .limit(1);
   return rows[0] ?? null;
 }
@@ -98,42 +96,27 @@ async function uniqueWorkspaceId(name: string) {
   return `${base}-${randomBytes(4).toString("hex")}`;
 }
 
-export function validateWorkspaceName(name: string) {
-  const trimmed = name.trim().replace(/\s+/g, " ");
-  if (trimmed.length < 2 || trimmed.length > 60)
-    throw new MembershipError("Give the lock-in a name, 2 to 60 characters.");
-  return trimmed;
-}
-
 export async function createWorkspace(name: string) {
   const clean = validateWorkspaceName(name);
-  const id = await uniqueWorkspaceId(clean);
-  const inviteCode = await uniqueInviteCode(clean);
-  await db.transaction(async (tx) => {
-    await tx.insert(workspaces).values({ id, name: clean, inviteCode });
-    await tx
-      .insert(boards)
-      .values({ workspaceId: id, id: MAIN_BOARD, name: "The board" });
-    await tx
-      .insert(labels)
-      .values(demoLabels.map((label) => ({ ...label, workspaceId: id })));
-  });
-  return { id, name: clean, inviteCode };
-}
-
-export function validateUsername(name: string) {
-  const trimmed = name.trim().replace(/\s+/g, " ");
-  if (!USERNAME_PATTERN.test(trimmed))
-    throw new MembershipError(
-      "Usernames are 2 to 24 characters: letters, numbers, spaces, and _ . ' -",
-    );
-  return trimmed;
-}
-
-export function validatePassword(password: string) {
-  if (password.length < 8)
-    throw new MembershipError("Passwords need at least 8 characters.");
-  return password;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const id = await uniqueWorkspaceId(clean);
+    const inviteCode = await uniqueInviteCode(clean);
+    try {
+      await db.transaction(async (tx) => {
+        await tx.insert(workspaces).values({ id, name: clean, inviteCode });
+        await tx
+          .insert(boards)
+          .values({ workspaceId: id, id: MAIN_BOARD, name: "The board" });
+        await tx
+          .insert(labels)
+          .values(demoLabels.map((label) => ({ ...label, workspaceId: id })));
+      });
+      return { id, name: clean, inviteCode };
+    } catch (error) {
+      if (!isUniqueViolation(error) || attempt === 2) throw error;
+    }
+  }
+  throw new MembershipError("Could not create the lock-in.", 500);
 }
 
 function initialsFor(name: string) {
@@ -181,18 +164,23 @@ export async function signupMember(
     throw new MembershipError("That username is taken in this lock-in.", 409);
   const total = await countMembers(workspaceId);
   const id = `${slugify(name, "member")}-${randomBytes(2).toString("hex")}`;
-  const member = {
-    workspaceId,
-    id,
-    name,
-    initials: initialsFor(name),
-    color: MEMBER_COLORS[total % MEMBER_COLORS.length]!,
-    role: total === 0 ? "Founder" : "Member",
-    passwordHash: await hashPassword(password),
-    avatar: null as string | null,
-  };
-  await db.insert(members).values(member);
-  return { id: member.id, name: member.name };
+  try {
+    await db.insert(members).values({
+      workspaceId,
+      id,
+      name,
+      initials: initialsFor(name),
+      color: MEMBER_COLORS[total % MEMBER_COLORS.length]!,
+      role: total === 0 ? "Founder" : "Member",
+      passwordHash: await hashPassword(password),
+      avatar: null,
+    });
+  } catch (error) {
+    if (isUniqueViolation(error))
+      throw new MembershipError("That username is taken in this lock-in.", 409);
+    throw error;
+  }
+  return { id, name };
 }
 
 export async function verifyMember(
@@ -200,11 +188,18 @@ export async function verifyMember(
   username: string,
   password: string,
 ) {
-  const member = await getMemberByName(workspaceId, username.trim());
-  if (!member || !member.passwordHash)
-    throw new MembershipError("No login found with that username.", 401);
+  const member = await getMemberByName(workspaceId, collapseName(username));
+  if (!member) {
+    await verifyPassword(password, DUMMY_HASH);
+    throw new MembershipError("Invalid username or password.", 401);
+  }
+  if (!member.passwordHash)
+    throw new MembershipError(
+      "This teammate predates logins and needs a fresh invite.",
+      401,
+    );
   if (!(await verifyPassword(password, member.passwordHash)))
-    throw new MembershipError("That password did not match.", 401);
+    throw new MembershipError("Invalid username or password.", 401);
   return { id: member.id, name: member.name, avatar: member.avatar };
 }
 
@@ -228,10 +223,6 @@ export function listAvatars() {
   } catch {
     return [];
   }
-}
-
-export function avatarUrl(file: string) {
-  return `/gamer-icons/${encodeURIComponent(file)}`;
 }
 
 export async function setMemberAvatar(

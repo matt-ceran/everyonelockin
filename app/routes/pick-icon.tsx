@@ -9,8 +9,8 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { readSessionMember } from "../modules/membership/auth.server";
+import { MembershipError } from "../modules/membership/validation";
 import {
-  MembershipError,
   getWorkspace,
   listAvatars,
   setMemberAvatar,
@@ -25,7 +25,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!workspace) throw new Response("Lock-in not found.", { status: 404 });
   const member = await readSessionMember(request, workspaceId);
   if (!member) return redirect(`/w/${workspaceId}/welcome`);
-  return { workspace, avatars: listAvatars(), picked: member.avatar };
+  return {
+    workspace: { id: workspace.id, name: workspace.name },
+    avatars: listAvatars(),
+    picked: member.avatar,
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -71,12 +75,13 @@ export default function PickIconRoute() {
       <div className="gate-column gate-wide">
         <Form method="post" className="icon-form">
           <div className="gamer-grid" role="group" aria-label="Pick your icon">
-            {avatars.map((file) => (
+            {avatars.map((file, index) => (
               <button
                 key={file}
                 type="button"
                 className="gamer"
                 aria-pressed={selected === file}
+                aria-label={`Icon option ${index + 1}`}
                 onClick={() => setSelected(file)}
               >
                 <img src={avatarImageUrl(file)} alt="" />

@@ -13,8 +13,8 @@ import {
   createSession,
   readSessionMember,
 } from "../modules/membership/auth.server";
+import { MembershipError } from "../modules/membership/validation";
 import {
-  MembershipError,
   getWorkspace,
   signupMember,
   verifyMember,
@@ -31,12 +31,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return redirect(
       member.avatar ? `/w/${workspaceId}` : `/w/${workspaceId}/pick-icon`,
     );
-  return { workspace };
+  return { workspace: { id: workspace.id, name: workspace.name } };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   requireSameOrigin(request);
   const workspaceId = params.workspaceId!;
+  const contentLength = Number(request.headers.get("Content-Length") ?? 0);
+  if (contentLength > 32768)
+    return data(
+      { ok: false as const, message: "That request is too large." },
+      { status: 413 },
+    );
   const form = await request.formData();
   const mode = form.get("mode");
   const username = String(form.get("username") ?? "");
@@ -50,14 +56,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { status: 400 },
         );
       const member = await signupMember(workspaceId, username, password);
-      const cookie = await createSession(workspaceId, member.id);
+      const cookie = await createSession(workspaceId, member.id, request);
       return redirect(`/w/${workspaceId}/pick-icon`, {
         headers: { "Set-Cookie": cookie },
       });
     }
     if (mode === "login") {
       const member = await verifyMember(workspaceId, username, password);
-      const cookie = await createSession(workspaceId, member.id);
+      const cookie = await createSession(workspaceId, member.id, request);
       const destination = member.avatar
         ? `/w/${workspaceId}`
         : `/w/${workspaceId}/pick-icon`;

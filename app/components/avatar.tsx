@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Member } from "../modules/tasks/model";
 
 export function avatarImageUrl(file: string) {
@@ -11,13 +12,18 @@ export function Avatar({
   member?: Member;
   small?: boolean;
 }) {
-  if (member?.avatar) {
+  const size = small ? 23 : 34;
+  const [broken, setBroken] = useState(false);
+  if (member?.avatar && !broken) {
     return (
       <img
         className={`avatar avatar-photo ${small ? "avatar-small" : ""}`}
         src={avatarImageUrl(member.avatar)}
         alt=""
         title={member.name}
+        width={size}
+        height={size}
+        onError={() => setBroken(true)}
       />
     );
   }

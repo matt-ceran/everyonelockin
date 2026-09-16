@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -9,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   unique,
+  uniqueIndex,
   index,
   pgEnum,
   jsonb,
@@ -37,7 +38,10 @@ export const members = pgTable(
     passwordHash: text("password_hash").notNull().default(""),
     avatar: text("avatar"),
   },
-  (t) => [primaryKey({ columns: [t.workspaceId, t.id] })],
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.id] }),
+    uniqueIndex("member_name_unique").on(t.workspaceId, sql`lower(${t.name})`),
+  ],
 );
 export const boards = pgTable(
   "boards",

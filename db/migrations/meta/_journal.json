@@ -15,6 +15,13 @@
       "when": 1789525403003,
       "tag": "0001_strong_thunderbolt_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789538712546,
+      "tag": "0002_busy_black_bird",
+      "breakpoints": true
     }
   ]
 }

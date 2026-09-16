@@ -3,12 +3,30 @@ import { promisify } from "node:util";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../platform/db/client.server";
 import { members, sessions } from "../../platform/db/schema.server";
+import { isValidWorkspaceId } from "./validation";
 
 const scryptAsync = promisify(scrypt);
 const SESSION_DAYS = 30;
 
+function decodeCookie(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
 export function sessionCookieName(workspaceId: string) {
+  if (!isValidWorkspaceId(workspaceId)) throw new Error("Bad workspace id.");
   return `el_${workspaceId}`;
+}
+
+function cookieSecure(secure: boolean) {
+  return secure ? "; Secure" : "";
+}
+
+export function isSecureRequest(request: Request) {
+  return new URL(request.url).protocol === "https:";
 }
 
 export async function hashPassword(password: string) {
@@ -31,15 +49,23 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function serializeSessionCookie(workspaceId: string, token: string) {
-  return `${sessionCookieName(workspaceId)}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}`;
+function serializeSessionCookie(
+  workspaceId: string,
+  token: string,
+  secure: boolean,
+) {
+  return `${sessionCookieName(workspaceId)}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}${cookieSecure(secure)}`;
 }
 
-export function clearSessionCookie(workspaceId: string) {
-  return `${sessionCookieName(workspaceId)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+export function clearSessionCookie(workspaceId: string, secure = false) {
+  return `${sessionCookieName(workspaceId)}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${cookieSecure(secure)}`;
 }
 
-export async function createSession(workspaceId: string, memberId: string) {
+export async function createSession(
+  workspaceId: string,
+  memberId: string,
+  request: Request,
+) {
   const token = randomBytes(32).toString("base64url");
   await db.insert(sessions).values({
     tokenHash: hashToken(token),
@@ -47,7 +73,7 @@ export async function createSession(workspaceId: string, memberId: string) {
     memberId,
     expiresAt: new Date(Date.now() + SESSION_DAYS * 86400000),
   });
-  return serializeSessionCookie(workspaceId, token);
+  return serializeSessionCookie(workspaceId, token, isSecureRequest(request));
 }
 
 export async function destroySession(request: Request, workspaceId: string) {
@@ -62,17 +88,22 @@ export async function destroySession(request: Request, workspaceId: string) {
         ),
       );
   }
-  return clearSessionCookie(workspaceId);
+  return clearSessionCookie(workspaceId, isSecureRequest(request));
 }
 
 export function readSessionToken(request: Request, workspaceId: string) {
   const header = request.headers.get("Cookie") ?? "";
-  const name = sessionCookieName(workspaceId);
+  let name: string;
+  try {
+    name = sessionCookieName(workspaceId);
+  } catch {
+    return null;
+  }
   for (const part of header.split(";")) {
     const index = part.indexOf("=");
     if (index < 0) continue;
     if (part.slice(0, index).trim() === name)
-      return decodeURIComponent(part.slice(index + 1).trim());
+      return decodeCookie(part.slice(index + 1).trim());
   }
   return null;
 }
@@ -113,7 +144,18 @@ export async function readSessionMember(
     )
     .limit(1);
   const row = rows[0];
-  if (!row || row.expiresAt.getTime() < Date.now()) return null;
+  if (!row) return null;
+  if (row.expiresAt.getTime() < Date.now()) {
+    await db
+      .delete(sessions)
+      .where(
+        and(
+          eq(sessions.workspaceId, workspaceId),
+          eq(sessions.tokenHash, hashToken(token)),
+        ),
+      );
+    return null;
+  }
   return { id: row.id, name: row.name, avatar: row.avatar };
 }
 
@@ -125,10 +167,11 @@ export function readSessionTokens(request: Request) {
     if (index < 0) continue;
     const name = part.slice(0, index).trim();
     if (!name.startsWith("el_")) continue;
-    found.push({
-      workspaceId: name.slice(3),
-      token: decodeURIComponent(part.slice(index + 1).trim()),
-    });
+    const workspaceId = name.slice(3);
+    if (!isValidWorkspaceId(workspaceId)) continue;
+    const token = decodeCookie(part.slice(index + 1).trim());
+    if (token) found.push({ workspaceId, token });
+    if (found.length >= 20) break;
   }
   return found;
 }

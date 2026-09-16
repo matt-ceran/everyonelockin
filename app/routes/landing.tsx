@@ -10,8 +10,8 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { listMemberSessions } from "../modules/membership/auth.server";
+import { MembershipError } from "../modules/membership/validation";
 import {
-  MembershipError,
   createWorkspace,
   getWorkspace,
   getWorkspaceByCode,

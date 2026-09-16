@@ -57,7 +57,7 @@ export function ErrorBoundary() {
           : "Check that the local database is running, then try again."}
       </p>
       <a className="button button-primary" href="/">
-        Back to the board
+        Back to start
       </a>
     </main>
   );

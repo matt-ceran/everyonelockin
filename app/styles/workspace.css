@@ -151,6 +151,8 @@ main {
 }
 .quote-block {
   max-width: 640px;
+  min-width: 0;
+  flex: 1;
   transform: rotate(-0.6deg);
 }
 .quote-text {
@@ -160,6 +162,7 @@ main {
   font-size: 1.15rem;
   line-height: 1.4;
   margin: 0;
+  overflow-wrap: break-word;
 }
 .quote-author {
   font-family: "Courier New", monospace;
@@ -176,10 +179,6 @@ main {
   font-weight: 700;
   letter-spacing: 0.06em;
 }
-.eyebrow span {
-  margin: 0 7px;
-  color: #aea4b6;
-}
 .view-heading h1 {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 2.7rem;
@@ -187,9 +186,6 @@ main {
   line-height: 1.1;
   letter-spacing: -0.04em;
   margin: 8px 0;
-}
-.heading-period {
-  color: var(--purple);
 }
 .view-heading > .button {
   margin-top: 0;
@@ -380,6 +376,12 @@ img.avatar {
 @media (max-width: 760px) {
   .gate-main {
     padding: 32px 16px;
+  }
+  .view-heading {
+    flex-wrap: wrap;
+  }
+  .quote-block {
+    transform: none;
   }
   .gamer-grid {
     grid-template-columns: repeat(3, 84px);

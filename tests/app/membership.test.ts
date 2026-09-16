@@ -1,0 +1,55 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import {
+  collapseName,
+  isValidWorkspaceId,
+  normalizeInviteCode,
+  slugify,
+  validatePassword,
+  validateUsername,
+  validateWorkspaceName,
+} from "../../app/modules/membership/validation";
+
+const nameRange = /2 to 60/;
+const userRange = /2 to 24/;
+const passwordRange = /8 to 128/;
+
+describe("membership validation", () => {
+  it("collapses extra whitespace so signup and login agree", () => {
+    assert.equal(collapseName("  ada   lovelace  "), "ada lovelace");
+  });
+
+  it("accepts invite codes with or without dashes and spaces", () => {
+    assert.equal(normalizeInviteCode("stu-4f8k2"), "STU4F8K2");
+    assert.equal(normalizeInviteCode("STU 4F8K2"), "STU4F8K2");
+    assert.equal(normalizeInviteCode("stu4f8k2"), "STU4F8K2");
+  });
+
+  it("builds URL-safe slugs with a fallback", () => {
+    assert.equal(slugify("War Room!", "lockin"), "war-room");
+    assert.equal(slugify("!!!", "lockin"), "lockin");
+  });
+
+  it("rejects short workspace names", () => {
+    assert.throws(() => validateWorkspaceName("a"), nameRange);
+    assert.equal(validateWorkspaceName("  The studio "), "The studio");
+  });
+
+  it("rejects bad usernames", () => {
+    assert.throws(() => validateUsername("x"), userRange);
+    assert.throws(() => validateUsername("no*stars"), userRange);
+    assert.equal(validateUsername("Ada Lovelace"), "Ada Lovelace");
+  });
+
+  it("bounds passwords on both ends", () => {
+    assert.throws(() => validatePassword("short"), passwordRange);
+    assert.throws(() => validatePassword("x".repeat(129)), passwordRange);
+    assert.equal(validatePassword("signal-strong-1"), "signal-strong-1");
+  });
+
+  it("spots malformed workspace ids for cookie names", () => {
+    assert.equal(isValidWorkspaceId("war-room"), true);
+    assert.equal(isValidWorkspaceId("a;b=c"), false);
+    assert.equal(isValidWorkspaceId(""), false);
+  });
+});
