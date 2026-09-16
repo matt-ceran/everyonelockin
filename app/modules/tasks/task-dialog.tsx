@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { Icon } from "../../components/icon";
 import { Avatar } from "../../components/avatar";
 import { useWorkspace } from "../workspace/context";
+import { readTaskOrigin, taskOriginPath, taskPath } from "./origin";
 import {
   STATUSES,
   STATUS_LABELS,
@@ -15,11 +16,13 @@ import {
 function Frame({ title, children }: { title: string; children: ReactNode }) {
   const navigate = useNavigate();
   const { base } = useWorkspace();
+  const [params] = useSearchParams();
+  const closeTo = taskOriginPath(base, readTaskOrigin(params.get("from")));
   return (
     <Dialog.Root
       open
       onOpenChange={(open) => {
-        if (!open) void navigate(base);
+        if (!open) void navigate(closeTo);
       }}
     >
       <Dialog.Portal>
@@ -46,6 +49,8 @@ function Frame({ title, children }: { title: string; children: ReactNode }) {
 
 function Notice({ editingTaskId }: { editingTaskId?: string }) {
   const { base, result, refresh, busy } = useWorkspace();
+  const [params] = useSearchParams();
+  const origin = readTaskOrigin(params.get("from"));
   return result && !result.ok ? (
     <div className="form-notice" role="alert">
       <p>{result.message}</p>
@@ -56,7 +61,10 @@ function Notice({ editingTaskId }: { editingTaskId?: string }) {
               Your draft is still here. Reviewing the latest task will leave
               this draft.
             </p>
-            <Link className="text-button" to={`${base}/tasks/${editingTaskId}`}>
+            <Link
+              className="text-button"
+              to={taskPath(base, editingTaskId, origin)}
+            >
               Review latest task
             </Link>
           </>
@@ -82,6 +90,8 @@ function TaskEditor({
   status?: TaskStatus;
 }) {
   const { workspace, base, send, busy } = useWorkspace();
+  const [params] = useSearchParams();
+  const origin = readTaskOrigin(params.get("from"));
   const [version] = useState(task?.version);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -179,7 +189,11 @@ function TaskEditor({
         <div className="form-actions">
           <Link
             className="text-button"
-            to={task ? `${base}/tasks/${task.id}` : base}
+            to={
+              task
+                ? taskPath(base, task.id, origin)
+                : taskOriginPath(base, origin)
+            }
           >
             Cancel
           </Link>
@@ -210,6 +224,7 @@ export function NewTaskDialog() {
 export function TaskDialog({ task }: { task: Task }) {
   const { workspace, base, send, busy } = useWorkspace();
   const [params] = useSearchParams();
+  const origin = readTaskOrigin(params.get("from"));
   const [archive, setArchive] = useState(false);
   const [removing, setRemoving] = useState(false);
   const owner = workspace.members.find((m) => m.id === task.ownerId);
@@ -310,7 +325,7 @@ export function TaskDialog({ task }: { task: Task }) {
           <div className="detail-actions">
             <Link
               className="button button-primary"
-              to={`${base}/tasks/${task.id}?edit=1`}
+              to={taskPath(base, task.id, origin, { edit: "1" })}
             >
               Edit task
             </Link>

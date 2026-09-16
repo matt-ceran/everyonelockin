@@ -17,13 +17,16 @@ import {
 } from "./model";
 import { TaskCard } from "./task-card";
 import { LabelManager } from "./label-manager";
+import { DEFAULT_TASK_ORIGIN, newTaskPath, type TaskOrigin } from "./origin";
 
 export function ViewHeading({
   title,
   newTask = true,
+  origin = DEFAULT_TASK_ORIGIN,
 }: {
   title: string;
   newTask?: boolean;
+  origin?: TaskOrigin;
 }) {
   const { base, quote } = useWorkspace();
   return (
@@ -34,7 +37,7 @@ export function ViewHeading({
       </div>
       <h1 className="sr-only">{title}</h1>
       {newTask && (
-        <Link to={`${base}/tasks/new`} className="button button-primary">
+        <Link to={newTaskPath(base, origin)} className="button button-primary">
           <Icon name="plus" />
           New task
         </Link>

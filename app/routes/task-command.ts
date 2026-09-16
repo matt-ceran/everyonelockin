@@ -3,6 +3,12 @@ import { readSessionMember } from "../modules/membership/auth.server";
 import { getWorkspace } from "../modules/membership/workspaces.server";
 import { requireSameOrigin } from "../platform/demo.server";
 import { commandSchema } from "../modules/tasks/commands";
+import {
+  readTaskOrigin,
+  taskOriginPath,
+  taskPath,
+  type TaskOrigin,
+} from "../modules/tasks/origin";
 import { executeCommand, TaskError } from "../modules/tasks/service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -28,11 +34,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { status: 413 },
     );
   let payload: unknown;
+  let origin: TaskOrigin;
   try {
     const form = await request.formData();
     const value = form.get("command");
     if (typeof value !== "string" || value.length > 32768) throw new Error();
     payload = JSON.parse(value);
+    origin = readTaskOrigin(form.get("origin"));
   } catch {
     return data(
       {
@@ -58,9 +66,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       result.intent === "update" ||
       result.intent === "restore"
     )
-      return redirect(`${base}/tasks/${result.taskId}`);
+      return redirect(taskPath(base, result.taskId, origin));
     if (result.intent === "archive" || result.intent === "delete")
-      return redirect(base);
+      return redirect(taskOriginPath(base, origin));
     return data(result);
   } catch (error) {
     if (error instanceof TaskError)

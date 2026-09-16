@@ -6,6 +6,7 @@ import {
   useLoaderData,
   useLocation,
   useRevalidator,
+  useSearchParams,
   type LoaderFunctionArgs,
   type ShouldRevalidateFunctionArgs,
 } from "react-router";
@@ -22,6 +23,7 @@ import {
   type TaskCommandInput,
 } from "../modules/tasks/commands";
 import { optimisticWorkspace } from "../modules/tasks/optimistic";
+import { taskOriginFromPath } from "../modules/tasks/origin";
 import { readWorkspace } from "../modules/tasks/repository.server";
 import { WorkspaceContext } from "../modules/workspace/context";
 import { Shell } from "../modules/workspace/shell";
@@ -69,6 +71,12 @@ export default function WorkspaceRoute() {
   const fetcher = useFetcher<CommandResult | CommandFailure>();
   const { revalidate, state } = useRevalidator();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const origin = taskOriginFromPath(
+    location.pathname,
+    searchParams.get("from"),
+    base,
+  );
   const firstPath = useRef(location.pathname);
   const [quote, setQuote] = useState(
     () => QUOTES[quoteIndex % QUOTES.length] ?? QUOTES[0]!,
@@ -107,6 +115,7 @@ export default function WorkspaceRoute() {
           ...command,
           mutationId: crypto.randomUUID(),
         }),
+        origin,
       },
       { method: "post", action: `${base}/resources/tasks` },
     );

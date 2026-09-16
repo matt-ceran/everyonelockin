@@ -203,6 +203,46 @@ test("board search, backlog, and personal views remain connected", async ({
   await archiveTask(page, base, id);
 });
 
+test("closing a task returns to the view it was opened from", async ({
+  page,
+}) => {
+  const { base, username } = await setupLockin(page);
+  const title = `Return ${randomUUID().slice(0, 8)}`;
+  const id = await createTask(page, base, title, username);
+  const card = page.locator(`[data-task-id="${id}"]`);
+  await card.locator("summary").click();
+  await card.getByRole("button", { name: "To Backlog", exact: true }).click();
+  await expect(page.locator(".save-status")).toContainText("Saved. Moved");
+
+  await page.getByRole("link", { name: "Backlog", exact: true }).click();
+  await page.getByRole("link", { name: title, exact: true }).click();
+  await expect(page).toHaveURL(
+    `http://127.0.0.1:5188${base}/tasks/${id}?from=backlog`,
+  );
+  await expect(page.getByRole("dialog")).toContainText(title);
+  await page.getByRole("button", { name: "Close task", exact: true }).click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/backlog`);
+
+  await page.getByRole("link", { name: title, exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(title);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/backlog`);
+
+  await page.getByRole("link", { name: "My work", exact: true }).click();
+  await page.getByRole("link", { name: title, exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText(title);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/my-tasks`);
+
+  await page.getByRole("link", { name: "Backlog", exact: true }).click();
+  await page.getByRole("link", { name: "New task", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("link", { name: "Cancel", exact: true }).click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/backlog`);
+
+  await archiveTask(page, base, id);
+});
+
 test("labels can be added, renamed, assigned, and removed", async ({
   page,
 }) => {
@@ -270,13 +310,13 @@ test("archived tasks can be brought back or deleted forever", async ({
     .click();
   await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
   await page.getByRole("link", { name: "Backlog", exact: true }).click();
-  await page
-    .locator(".archived-section > summary")
-    .click();
+  await page.locator(".archived-section > summary").click();
   const row = page.locator(".archived-row", { hasText: title });
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Bring back", exact: true }).click();
-  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/tasks/${id}`);
+  await expect(page).toHaveURL(
+    `http://127.0.0.1:5188${base}/tasks/${id}?from=backlog`,
+  );
   await expect(page.getByRole("dialog")).toContainText(title);
   await page
     .getByRole("button", { name: "Delete forever", exact: true })
@@ -284,7 +324,7 @@ test("archived tasks can be brought back or deleted forever", async ({
   await page
     .getByRole("button", { name: "Yes, delete forever", exact: true })
     .click();
-  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/backlog`);
   await page.getByRole("link", { name: "Backlog", exact: true }).click();
   await expect(page.locator(".archived-section")).toHaveCount(0);
   await page.goto(`${base}/tasks/${id}`);
@@ -305,7 +345,7 @@ test("archived tasks can be brought back or deleted forever", async ({
     .getByRole("button", { name: "Delete forever", exact: true })
     .click();
   await secondRow.getByRole("button", { name: "Sure?", exact: true }).click();
-  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/backlog`);
   await expect(secondRow).toHaveCount(0);
 });
 

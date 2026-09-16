@@ -1,5 +1,5 @@
 import { useParams } from "react-router";
-import { BoardView } from "../modules/tasks/board-view";
+import { TaskOriginView } from "../modules/tasks/origin-view";
 import { TaskDialog } from "../modules/tasks/task-dialog";
 import { useWorkspace } from "../modules/workspace/context";
 export default function TaskRoute() {
@@ -9,7 +9,7 @@ export default function TaskRoute() {
   if (!task) throw new Response("Task not found.", { status: 404 });
   return (
     <>
-      <BoardView />
+      <TaskOriginView />
       <TaskDialog task={task} />
     </>
   );

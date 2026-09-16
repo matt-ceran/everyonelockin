@@ -5,10 +5,12 @@ import { Icon } from "../../components/icon";
 import { useWorkspace } from "../workspace/context";
 import { TaskFilters, ViewHeading } from "./board-view";
 import { matchesTask, orderedTasks, STATUS_LABELS, type Task } from "./model";
+import { newTaskPath, taskPath } from "./origin";
 
 export function TaskListView({ mine = false }: { mine?: boolean }) {
   const { workspace, base, send, busy } = useWorkspace();
   const [params] = useSearchParams();
+  const origin = mine ? "my-tasks" : "backlog";
   const candidates = workspace.tasks.filter((t) =>
     mine
       ? t.ownerId === workspace.currentMemberId ||
@@ -26,7 +28,7 @@ export function TaskListView({ mine = false }: { mine?: boolean }) {
   );
   return (
     <>
-      <ViewHeading title={mine ? "My work" : "The backlog"} />
+      <ViewHeading title={mine ? "My work" : "The backlog"} origin={origin} />
       <TaskFilters />
       {tasks.length ? (
         <div className="task-list">
@@ -42,7 +44,7 @@ export function TaskListView({ mine = false }: { mine?: boolean }) {
                 <span className="task-number">
                   EL-{String(task.number).padStart(2, "0")}
                 </span>
-                <Link to={`${base}/tasks/${task.id}`}>{task.title}</Link>
+                <Link to={taskPath(base, task.id, origin)}>{task.title}</Link>
                 <span className="row-status">{STATUS_LABELS[task.status]}</span>
               </div>
               <div className="task-labels">
@@ -104,7 +106,9 @@ export function TaskListView({ mine = false }: { mine?: boolean }) {
           </p>
           <Link
             className="button"
-            to={mine ? base : `${base}/tasks/new?status=backlog`}
+            to={
+              mine ? base : newTaskPath(base, "backlog", { status: "backlog" })
+            }
           >
             {mine ? "Explore the board" : "Add an idea"}
           </Link>

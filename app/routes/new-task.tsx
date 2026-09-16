@@ -1,9 +1,9 @@
-import { BoardView } from "../modules/tasks/board-view";
+import { TaskOriginView } from "../modules/tasks/origin-view";
 import { NewTaskDialog } from "../modules/tasks/task-dialog";
 export default function NewTaskRoute() {
   return (
     <>
-      <BoardView />
+      <TaskOriginView />
       <NewTaskDialog />
     </>
   );

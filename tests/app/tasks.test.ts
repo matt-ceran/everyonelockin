@@ -8,6 +8,13 @@ import {
   type WorkspaceSnapshot,
 } from "../../app/modules/tasks/model";
 import { optimisticWorkspace } from "../../app/modules/tasks/optimistic";
+import {
+  newTaskPath,
+  readTaskOrigin,
+  taskOriginFromPath,
+  taskOriginPath,
+  taskPath,
+} from "../../app/modules/tasks/origin";
 
 const makeTask = (
   id: string,
@@ -75,6 +82,50 @@ test("search combines text, label, and ownership without changing the task", () 
   assert.equal(matchesTask(task, { owner: "unassigned" }), false);
   assert.equal(matchesTask(task, { query: "EL-1" }), true);
   assert.equal(matchesTask(task, { label: "engineering" }), false);
+});
+test("task origins stay inside the workspace views", () => {
+  assert.equal(readTaskOrigin("backlog"), "backlog");
+  assert.equal(readTaskOrigin("my-tasks"), "my-tasks");
+  assert.equal(readTaskOrigin("activity"), "activity");
+  assert.equal(readTaskOrigin("board"), "board");
+  assert.equal(readTaskOrigin("https://unrelated.example"), "board");
+  assert.equal(readTaskOrigin("toString"), "board");
+  assert.equal(readTaskOrigin(null), "board");
+  assert.equal(readTaskOrigin(42), "board");
+  assert.equal(taskOriginPath("/w/one", "activity"), "/w/one/activity");
+  assert.equal(taskOriginPath("/w/one", "board"), "/w/one");
+  assert.equal(taskPath("/w/one", "task-1", "board"), "/w/one/tasks/task-1");
+  assert.equal(
+    taskPath("/w/one", "task-1", "backlog"),
+    "/w/one/tasks/task-1?from=backlog",
+  );
+  assert.equal(
+    taskPath("/w/one", "task-1", "my-tasks", { edit: "1" }),
+    "/w/one/tasks/task-1?from=my-tasks&edit=1",
+  );
+  assert.equal(
+    newTaskPath("/w/one", "backlog"),
+    "/w/one/tasks/new?from=backlog",
+  );
+  assert.equal(
+    newTaskPath("/w/one", "backlog", { status: "backlog" }),
+    "/w/one/tasks/new?from=backlog&status=backlog",
+  );
+  assert.equal(taskOriginFromPath("/w/one/backlog", null, "/w/one"), "backlog");
+  assert.equal(
+    taskOriginFromPath("/w/one/my-tasks/", null, "/w/one"),
+    "my-tasks",
+  );
+  assert.equal(
+    taskOriginFromPath("/w/one/activity", null, "/w/one"),
+    "activity",
+  );
+  assert.equal(taskOriginFromPath("/w/one/", null, "/w/one"), "board");
+  assert.equal(
+    taskOriginFromPath("/w/one/tasks/task-1", "backlog", "/w/one"),
+    "backlog",
+  );
+  assert.equal(taskOriginFromPath("/w/one/tasks/new", null, "/w/one"), "board");
 });
 test("optimistic movement inserts before its target and leaves confirmed state untouched", () => {
   const a = makeTask(randomUUID(), 1000);
