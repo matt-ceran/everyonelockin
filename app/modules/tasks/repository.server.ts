@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "../../platform/db/client.server";
 import * as tables from "../../platform/db/schema.server";
 import type { WorkspaceSnapshot } from "./model";
@@ -22,6 +22,17 @@ export async function readWorkspace(
             isNull(tables.tasks.archivedAt),
           ),
         );
+      const archivedRows = await tx
+        .select()
+        .from(tables.tasks)
+        .where(
+          and(
+            eq(tables.tasks.workspaceId, workspaceId),
+            isNotNull(tables.tasks.archivedAt),
+          ),
+        )
+        .orderBy(desc(tables.tasks.updatedAt))
+        .limit(50);
       const memberRows = await tx
         .select({
           id: tables.members.id,
@@ -53,22 +64,24 @@ export async function readWorkspace(
         .limit(100);
       if (!workspace[0] || !memberRows.some((m) => m.id === currentMemberId))
         throw new Response("Workspace not found.", { status: 404 });
+      const shape = (task: (typeof taskRows)[number]) => ({
+        ...task,
+        createdAt: task.createdAt.toISOString(),
+        updatedAt: task.updatedAt.toISOString(),
+        labelIds: links
+          .filter((l) => l.taskId === task.id)
+          .map((l) => l.labelId),
+        helperIds: helpers
+          .filter((h) => h.taskId === task.id)
+          .map((h) => h.memberId),
+      });
       return {
         name: workspace[0].name,
         currentMemberId,
         members: memberRows,
         labels,
-        tasks: taskRows.map((task) => ({
-          ...task,
-          createdAt: task.createdAt.toISOString(),
-          updatedAt: task.updatedAt.toISOString(),
-          labelIds: links
-            .filter((l) => l.taskId === task.id)
-            .map((l) => l.labelId),
-          helperIds: helpers
-            .filter((h) => h.taskId === task.id)
-            .map((h) => h.memberId),
-        })),
+        tasks: taskRows.map(shape),
+        archived: archivedRows.map(shape),
         activity: activity.map((event) => ({
           ...event,
           createdAt: event.createdAt.toISOString(),

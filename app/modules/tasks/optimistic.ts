@@ -5,7 +5,13 @@ export function optimisticWorkspace(
   snapshot: WorkspaceSnapshot,
   command?: TaskCommand,
 ): WorkspaceSnapshot {
-  if (!command || command.intent === "create" || command.intent === "archive")
+  if (
+    !command ||
+    command.intent === "create" ||
+    command.intent === "archive" ||
+    command.intent === "restore" ||
+    command.intent === "delete"
+  )
     return snapshot;
   const tasks = snapshot.tasks.map((t) => ({ ...t }));
   const task = tasks.find((t) => t.id === command.taskId);

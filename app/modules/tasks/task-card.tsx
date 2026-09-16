@@ -54,7 +54,7 @@ export function TaskCard({ task }: { task: Task }) {
         onDrop: () => setOver(false),
       }),
     );
-  }, [task.id, task.status, busy]);
+  }, [task.id, task.status, task.number, busy]);
   return (
     <article
       ref={element}

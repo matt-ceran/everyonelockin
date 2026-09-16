@@ -211,6 +211,7 @@ export function TaskDialog({ task }: { task: Task }) {
   const { workspace, base, send, busy } = useWorkspace();
   const [params] = useSearchParams();
   const [archive, setArchive] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const owner = workspace.members.find((m) => m.id === task.ownerId);
   const helping = task.helperIds.includes(workspace.currentMemberId);
   const editing = params.has("edit");
@@ -320,6 +321,13 @@ export function TaskDialog({ task }: { task: Task }) {
             >
               Archive task
             </button>
+            <button
+              className="text-button muted"
+              type="button"
+              onClick={() => setRemoving(true)}
+            >
+              Delete forever
+            </button>
           </div>
           {archive && (
             <div
@@ -346,6 +354,36 @@ export function TaskDialog({ task }: { task: Task }) {
                 type="button"
                 className="text-button"
                 onClick={() => setArchive(false)}
+              >
+                Keep it here
+              </button>
+            </div>
+          )}
+          {removing && (
+            <div
+              className="archive-confirm"
+              role="group"
+              aria-label="Confirm delete"
+            >
+              <p>This wipes the task for everyone. There is no undo.</p>
+              <button
+                type="button"
+                className="button button-danger"
+                disabled={busy}
+                onClick={() =>
+                  send({
+                    intent: "delete",
+                    taskId: task.id,
+                    version: task.version,
+                  })
+                }
+              >
+                Yes, delete forever
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setRemoving(false)}
               >
                 Keep it here
               </button>

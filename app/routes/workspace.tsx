@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Outlet,
   redirect,
@@ -14,7 +14,7 @@ import {
   readSessionMember,
 } from "../modules/membership/auth.server";
 import { getWorkspace } from "../modules/membership/workspaces.server";
-import { pickQuote } from "../modules/quotes/quotes";
+import { QUOTES, pickQuote } from "../modules/quotes/quotes";
 import {
   commandSchema,
   type CommandFailure,
@@ -38,6 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     snapshot,
     base: `/w/${workspaceId}`,
+    quoteIndex: Math.floor(Math.random() * QUOTES.length),
     inviteCode,
     inviteLink: `${publicOrigin(request)}/join/${inviteCode}`,
   };
@@ -61,13 +62,23 @@ export default function WorkspaceRoute() {
   const {
     snapshot: loaded,
     base,
+    quoteIndex,
     inviteCode,
     inviteLink,
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<CommandResult | CommandFailure>();
   const { revalidate, state } = useRevalidator();
   const location = useLocation();
-  const quote = useMemo(() => pickQuote(), [location.pathname]);
+  const firstPath = useRef(location.pathname);
+  const [quote, setQuote] = useState(
+    () => QUOTES[quoteIndex % QUOTES.length] ?? QUOTES[0]!,
+  );
+  useEffect(() => {
+    if (location.pathname !== firstPath.current) {
+      firstPath.current = location.pathname;
+      setQuote(pickQuote());
+    }
+  }, [location.pathname]);
   const [resultLocation, setResultLocation] = useState<string>();
   const pendingFocus = useRef<{ taskId: string; sawBusy: boolean } | null>(
     null,

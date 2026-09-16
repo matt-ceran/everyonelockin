@@ -203,6 +203,112 @@ test("board search, backlog, and personal views remain connected", async ({
   await archiveTask(page, base, id);
 });
 
+test("labels can be added, renamed, assigned, and removed", async ({
+  page,
+}) => {
+  const { base, username } = await setupLockin(page);
+  const labelName = `Zany ${randomUUID().slice(0, 8)}`;
+  const renamed = `${labelName} crew`;
+  await page.goto(base);
+  await page.getByRole("button", { name: "Edit labels", exact: true }).click();
+  await page.getByLabel("New label name", { exact: true }).fill(labelName);
+  await page
+    .locator(".label-new")
+    .getByRole("button", { name: "green", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add label", exact: true }).click();
+  await expect(page.getByLabel("New label name", { exact: true })).toHaveValue(
+    "",
+  );
+  await page.getByLabel(`Name for ${labelName}`, { exact: true }).fill(renamed);
+  const renameRow = page
+    .locator(".label-row")
+    .filter({ has: page.getByLabel(`Name for ${labelName}`) });
+  await renameRow.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(
+    page.getByLabel(`Name for ${renamed}`, { exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: renamed, exact: true }),
+  ).toBeVisible();
+  const title = `Labeled ${randomUUID().slice(0, 8)}`;
+  const id = await createTask(page, base, title, username);
+  await page.goto(`${base}/tasks/${id}?edit=1`);
+  await page.getByRole("checkbox", { name: renamed, exact: true }).check();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/tasks/${id}`);
+  await expect(page.getByRole("dialog")).toContainText(renamed);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit labels", exact: true }).click();
+  const deleteRow = page
+    .locator(".label-row")
+    .filter({ has: page.getByLabel(`Name for ${renamed}`) });
+  await deleteRow.getByRole("button", { name: "Delete", exact: true }).click();
+  await deleteRow.getByRole("button", { name: "Sure?", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: renamed, exact: true }),
+  ).toHaveCount(0);
+  await page.goto(`${base}/tasks/${id}`);
+  await expect(page.getByRole("dialog")).not.toContainText(renamed);
+  await page.keyboard.press("Escape");
+  await archiveTask(page, base, id);
+});
+
+test("archived tasks can be brought back or deleted forever", async ({
+  page,
+}) => {
+  const { base, username } = await setupLockin(page);
+  const title = `Transient ${randomUUID().slice(0, 8)}`;
+  const id = await createTask(page, base, title, username);
+  await page.goto(`${base}/tasks/${id}`);
+  await page.getByRole("button", { name: "Archive task", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Yes, archive task", exact: true })
+    .click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
+  await page.getByRole("link", { name: "Backlog", exact: true }).click();
+  await page
+    .locator(".archived-section > summary")
+    .click();
+  const row = page.locator(".archived-row", { hasText: title });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Bring back", exact: true }).click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}/tasks/${id}`);
+  await expect(page.getByRole("dialog")).toContainText(title);
+  await page
+    .getByRole("button", { name: "Delete forever", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Yes, delete forever", exact: true })
+    .click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
+  await page.getByRole("link", { name: "Backlog", exact: true }).click();
+  await expect(page.locator(".archived-section")).toHaveCount(0);
+  await page.goto(`${base}/tasks/${id}`);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "Nothing here",
+  );
+  const second = `Gone ${randomUUID().slice(0, 8)}`;
+  const secondId = await createTask(page, base, second, username);
+  await page.goto(`${base}/tasks/${secondId}`);
+  await page.getByRole("button", { name: "Archive task", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Yes, archive task", exact: true })
+    .click();
+  await page.getByRole("link", { name: "Backlog", exact: true }).click();
+  await page.locator(".archived-section > summary").click();
+  const secondRow = page.locator(".archived-row", { hasText: second });
+  await secondRow
+    .getByRole("button", { name: "Delete forever", exact: true })
+    .click();
+  await secondRow.getByRole("button", { name: "Sure?", exact: true }).click();
+  await expect(page).toHaveURL(`http://127.0.0.1:5188${base}`);
+  await expect(secondRow).toHaveCount(0);
+});
+
 test("two browsers see saved moves and stale writes cannot overwrite them", async ({
   page,
 }) => {

@@ -8,7 +8,8 @@ Its visual language draws from illustrated websites of the mid-1990s: bold masth
 
 - Create a lock-in with an invite code, share the link, and have teammates join.
 - Each member picks a per-lock-in username, password, and gamer icon.
-- Create, edit, prioritize, and archive tasks.
+- Create, edit, prioritize, archive, restore, and permanently delete tasks.
+- Define your own label categories with colors; rename them anytime.
 - Assign one owner and let people volunteer to help separately.
 - Move tasks through Backlog, Up next, In progress, In review, and Done.
 - Drag cards between columns or use their keyboard-accessible Move controls.

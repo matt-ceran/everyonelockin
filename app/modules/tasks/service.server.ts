@@ -67,6 +67,11 @@ export async function executeCommand(
           "This request ID was already used for a different change.",
           409,
         );
+      if (!("taskId" in receipt[0].result))
+        throw new TaskError(
+          "This request ID was already used for a different change.",
+          409,
+        );
       return receipt[0].result;
     }
 
@@ -128,6 +133,8 @@ export async function executeCommand(
       taskId = created.id;
       message = `created EL-${created.number}: ${created.title}`;
     } else {
+      const includeArchived =
+        command.intent === "restore" || command.intent === "delete";
       const [task] = await tx
         .select()
         .from(tasks)
@@ -135,7 +142,7 @@ export async function executeCommand(
           and(
             eq(tasks.workspaceId, workspaceId),
             eq(tasks.id, command.taskId),
-            isNull(tasks.archivedAt),
+            ...(includeArchived ? [] : [isNull(tasks.archivedAt)]),
           ),
         );
       if (!task) throw new TaskError("This task is no longer available.", 404);
@@ -226,6 +233,28 @@ export async function executeCommand(
           .set({ version, updatedAt })
           .where(eq(tasks.id, taskId));
         message = `${command.helping ? "offered to help with" : "stepped back from"} EL-${task.number}`;
+      } else if (command.intent === "restore") {
+        if (!task.archivedAt)
+          throw new TaskError("That task is already back.", 409);
+        await tx
+          .update(tasks)
+          .set({ archivedAt: null, version, updatedAt })
+          .where(eq(tasks.id, taskId));
+        message = `restored EL-${task.number}: ${task.title}`;
+      } else if (command.intent === "delete") {
+        await tx
+          .update(activity)
+          .set({ taskId: null })
+          .where(
+            and(
+              eq(activity.workspaceId, workspaceId),
+              eq(activity.taskId, taskId),
+            ),
+          );
+        await tx
+          .delete(tasks)
+          .where(and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, taskId)));
+        message = `removed EL-${task.number}: ${task.title}`;
       } else {
         await tx
           .update(tasks)
@@ -242,7 +271,12 @@ export async function executeCommand(
           .insert(taskLabels)
           .values(ids.map((labelId) => ({ workspaceId, taskId, labelId })));
     }
-    await tx.insert(activity).values({ workspaceId, taskId, actorId, message });
+    await tx.insert(activity).values({
+      workspaceId,
+      taskId: command.intent === "delete" ? null : taskId,
+      actorId,
+      message,
+    });
     const result: CommandResult = {
       ok: true,
       taskId,

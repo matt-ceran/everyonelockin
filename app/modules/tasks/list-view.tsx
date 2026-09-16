@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Avatar } from "../../components/avatar";
 import { Icon } from "../../components/icon";
 import { useWorkspace } from "../workspace/context";
 import { TaskFilters, ViewHeading } from "./board-view";
-import { matchesTask, orderedTasks, STATUS_LABELS } from "./model";
+import { matchesTask, orderedTasks, STATUS_LABELS, type Task } from "./model";
 
 export function TaskListView({ mine = false }: { mine?: boolean }) {
   const { workspace, base, send, busy } = useWorkspace();
@@ -109,6 +110,81 @@ export function TaskListView({ mine = false }: { mine?: boolean }) {
           </Link>
         </div>
       )}
+      {!mine && <ArchivedSection />}
     </>
+  );
+}
+
+function ArchivedSection() {
+  const { workspace, send, busy } = useWorkspace();
+  const [confirming, setConfirming] = useState<string | null>(null);
+  if (!workspace.archived.length) return null;
+  const remove = (task: Task) => {
+    setConfirming(null);
+    send({ intent: "delete", taskId: task.id, version: task.version });
+  };
+  return (
+    <details className="archived-section">
+      <summary>
+        Archived · {workspace.archived.length}
+        <span aria-hidden="true"> ▾</span>
+      </summary>
+      <div className="archived-list">
+        {workspace.archived.map((task) => (
+          <article key={task.id} className="archived-row">
+            <div>
+              <span className="task-number">
+                EL-{String(task.number).padStart(2, "0")}
+              </span>
+              <strong>{task.title}</strong>
+              <span className="row-status">{STATUS_LABELS[task.status]}</span>
+            </div>
+            <div className="archived-actions">
+              <button
+                type="button"
+                className="button button-small"
+                disabled={busy}
+                onClick={() =>
+                  send({
+                    intent: "restore",
+                    taskId: task.id,
+                    version: task.version,
+                  })
+                }
+              >
+                Bring back
+              </button>
+              {confirming === task.id ? (
+                <>
+                  <button
+                    type="button"
+                    className="button button-small button-danger"
+                    disabled={busy}
+                    onClick={() => remove(task)}
+                  >
+                    Sure?
+                  </button>
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => setConfirming(null)}
+                  >
+                    Keep
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="text-button muted"
+                  onClick={() => setConfirming(task.id)}
+                >
+                  Delete forever
+                </button>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </details>
   );
 }

@@ -53,9 +53,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   try {
     const result = await executeCommand(parsed.data, workspaceId, member.id);
-    if (result.intent === "create" || result.intent === "update")
+    if (
+      result.intent === "create" ||
+      result.intent === "update" ||
+      result.intent === "restore"
+    )
       return redirect(`${base}/tasks/${result.taskId}`);
-    if (result.intent === "archive") return redirect(base);
+    if (result.intent === "archive" || result.intent === "delete")
+      return redirect(base);
     return data(result);
   } catch (error) {
     if (error instanceof TaskError)

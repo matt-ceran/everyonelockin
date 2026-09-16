@@ -61,6 +61,7 @@ export interface WorkspaceSnapshot {
   name: string;
   currentMemberId: string;
   tasks: Task[];
+  archived: Task[];
   members: Member[];
   labels: Label[];
   activity: Activity[];
